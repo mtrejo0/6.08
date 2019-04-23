@@ -5,6 +5,10 @@ import sys
 sys.path.append("__HOME__/finalProject")
 
 def handleWaiting(c):
+	'''
+	This request returns the seconds left until the game starts
+	'''
+	
 	c.execute('''CREATE TABLE IF NOT EXISTS lobbyPlayers (user text, time timestamp);''') # run a CREATE TABLE command
 
 	players_dict = {}
@@ -15,7 +19,7 @@ def handleWaiting(c):
 		if db_data[0] not in players_dict:
 			players_dict[db_data[0]] = db_data[1]
 
-	pl = sorted(players_dict.items(), key=lambda x: x[1], reverse=True)
+	pl = sorted(players_dict.items(), key=lambda x: x[1], reverse=True)	# sort by time
 	if len(pl) >= 2:	# we have at least 2 players
 		# convert datetime strings to datetime obj
 		most_recent_time = datetime.datetime.strptime(pl[0][1], "%Y-%m-%d %H:%M:%S.%f")
