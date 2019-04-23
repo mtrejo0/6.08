@@ -8,7 +8,7 @@ def handleWaiting(c):
 	'''
 	This request returns the seconds left until the game starts
 	'''
-	
+
 	c.execute('''CREATE TABLE IF NOT EXISTS lobbyPlayers (user text, time timestamp);''') # run a CREATE TABLE command
 
 	players_dict = {}
@@ -73,7 +73,6 @@ def request_handler(request):
 			conn.commit() # commit commands
 			conn.close() # close connection to database
 			return g
-	return request
 
 def handleStartGame(c, data):
 	try:
@@ -84,10 +83,12 @@ def handleStartGame(c, data):
 	c.execute('''CREATE TABLE IF NOT EXISTS lobbyPlayers (user text, time timestamp);''') # run a CREATE TABLE command
 	c.execute('''INSERT into lobbyPlayers VALUES (?,?);''', (user, datetime.datetime.now()))
 
-	players =  c.execute('''SELECT * FROM lobbyPlayers ORDER BY time DESC;''').fetchall()
+	return "You're in the game!"
 
-	things = ""
-	for player in players:
-		things += str(player) + "\n"
-
-	return things
+	# players =  c.execute('''SELECT * FROM lobbyPlayers ORDER BY time DESC;''').fetchall()
+	# 
+	# things = ""
+	# for player in players:
+	# 	things += str(player) + "\n"
+	#
+	# return things
