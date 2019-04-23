@@ -4,37 +4,6 @@ import sqlite3
 import sys
 sys.path.append("__HOME__/finalProject")
 
-def handleWaiting(c):
-	'''
-	This request returns the seconds left until the game starts
-	'''
-
-	c.execute('''CREATE TABLE IF NOT EXISTS lobbyPlayers (user text, time timestamp);''') # run a CREATE TABLE command
-
-	players_dict = {}
-	players =  c.execute('''SELECT * FROM lobbyPlayers ORDER BY time DESC;''').fetchall()
-
-	# make sure player entries are unique
-	for db_data in players:
-		if db_data[0] not in players_dict:
-			players_dict[db_data[0]] = db_data[1]
-
-	pl = sorted(players_dict.items(), key=lambda x: x[1], reverse=True)	# sort by time
-	if len(pl) >= 2:	# we have at least 2 players
-		# convert datetime strings to datetime obj
-		most_recent_time = datetime.datetime.strptime(pl[0][1], "%Y-%m-%d %H:%M:%S.%f")
-		if (datetime.datetime.now()-most_recent_time).total_seconds() >= 20:	# check if 20 seconds have elapsed
-			# game starts
-			for player in pl:
-				c.execute('''INSERT into playerData VALUES (?,?);''', (player[0], 3))	# players will be initialized to 3 health
-			c.execute('''DROP TABLE IF EXISTS lobbyPlayers''')	# reset the lobby players, because we don't need them anymore at this point
-			return 0	# let players know game has started
-		else:
-			return 20-round((datetime.datetime.now()-most_recent_time).total_seconds())	# players are still being added in
-	elif len(pl) == 0:
-		return 0	# we're guaranteed that players send a post request first then
-	return 20	# in the case of one player
-
 def request_handler(request):
 	# every request should have an ID and an action
 	if request["method"] == "GET":
@@ -86,9 +55,40 @@ def handleStartGame(c, data):
 	return "You're in the game!"
 
 	# players =  c.execute('''SELECT * FROM lobbyPlayers ORDER BY time DESC;''').fetchall()
-	# 
+	#
 	# things = ""
 	# for player in players:
 	# 	things += str(player) + "\n"
 	#
 	# return things
+
+def handleWaiting(c):
+	'''
+	This request returns the seconds left until the game starts
+	'''
+
+	c.execute('''CREATE TABLE IF NOT EXISTS lobbyPlayers (user text, time timestamp);''') # run a CREATE TABLE command
+
+	players_dict = {}
+	players =  c.execute('''SELECT * FROM lobbyPlayers ORDER BY time DESC;''').fetchall()
+
+	# make sure player entries are unique
+	for db_data in players:
+		if db_data[0] not in players_dict:
+			players_dict[db_data[0]] = db_data[1]
+
+	pl = sorted(players_dict.items(), key=lambda x: x[1], reverse=True)	# sort by time
+	if len(pl) >= 2:	# we have at least 2 players
+		# convert datetime strings to datetime obj
+		most_recent_time = datetime.datetime.strptime(pl[0][1], "%Y-%m-%d %H:%M:%S.%f")
+		if (datetime.datetime.now()-most_recent_time).total_seconds() >= 20:	# check if 20 seconds have elapsed
+			# game starts
+			for player in pl:
+				c.execute('''INSERT into playerData VALUES (?,?);''', (player[0], 3))	# players will be initialized to 3 health
+			c.execute('''DROP TABLE IF EXISTS lobbyPlayers''')	# reset the lobby players, because we don't need them anymore at this point
+			return 0	# let players know game has started
+		else:
+			return 20-round((datetime.datetime.now()-most_recent_time).total_seconds())	# players are still being added in
+	elif len(pl) == 0:
+		return 0	# we're guaranteed that players send a post request first then
+	return 20	# in the case of one player
