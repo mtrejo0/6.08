@@ -25,7 +25,7 @@ def handleWaiting(c):
         if (datetime.datetime.now()-most_recent_time).total_seconds() >= 20:    # check if 20 seconds have elapsed
             # game starts
             for player in pl:
-                c.execute('''INSERT into playerData VALUES (?,?);''', (player[0], 3))   # players will be initialized to 3 health
+                c.execute('''INSERT into playerData VALUES (?,?,?,?);''', (player[0], 3,0,0))   # players will be initialized to 3 health
             c.execute('''DROP TABLE IF EXISTS lobbyPlayers''')  # reset the lobby players, because we don't need them anymore at this point
             return 0    # let players know game has started
         else:
@@ -46,7 +46,7 @@ def request_handler(request):
         example_db = "__HOME__/finalProject/players.db" # just come up with name of database
         conn = sqlite3.connect(example_db)  # connect to that database (will create if it doesn't already exist)
         c = conn.cursor()  # make cursor into database (allows us to execute commands)
-        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int);''') # run a CREATE TABLE command
+        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, long float);''') # run a CREATE TABLE command
 
         if action == "waiting":
             # displays how long before the game begins if there is at least 2 players in the game
@@ -61,6 +61,31 @@ def request_handler(request):
             conn.commit() # commit commands
             conn.close() # close connection to database
             return things
+        if(action == "getGPS"):
+            # action to get all the GPS data for all the players
+            things =  c.execute('''SELECT * FROM playerData;''').fetchall()
+            gps = []
+            for each in things:
+                gps+=[(each[2],each[3])]
+            conn.commit() # commit commands
+            conn.close() # close connection to database
+            return gps
+        if(action == "getHealth"):
+            # action to get all the GPS data for all the players
+            things =  c.execute('''SELECT * FROM playerData;''').fetchall()
+            health = None
+            for each in things:
+                if(each[0] == data["user"]):
+                    health = each[1]
+                    break
+            if(health == None):
+                conn.commit() # commit commands
+                conn.close()
+                return "That player does not exist"
+                
+            conn.commit() # commit commands
+            conn.close() # close connection to database
+            return health
         if action == "gameStatus":
 
             # returns wether a player has won or how many players are left in the game
@@ -85,7 +110,7 @@ def request_handler(request):
         example_db = "__HOME__/finalProject/players.db"
         conn = sqlite3.connect(example_db)  # connect to that database (will create if it doesn't already exist)
         c = conn.cursor()  # make cursor into database (allows us to execute commands)
-        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int);''') # run a CREATE TABLE command
+        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, lon float);''') # run a CREATE TABLE command
 
         # handle specific POST Requests
         if (action == "initial"):
@@ -124,6 +149,17 @@ def request_handler(request):
             conn.commit()
             conn.close()
             return str(user) + " took damage"
+        if action == "gpsUpdate":
+            user = data["user"]
+            lat = float(data["lat"])
+            lon = float(data["lon"])
+            c.execute('''UPDATE playerData SET lat = (?) WHERE user = (?);''',(lat,user))
+            c.execute('''UPDATE playerData SET lon = (?) WHERE user = (?);''',(lon,user))
+            conn.commit()
+            conn.close()
+            return "You are at "+str((lat,lon))
+
+
 
         
 
