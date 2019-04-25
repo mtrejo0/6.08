@@ -35,7 +35,7 @@ def handleWaiting(c):
     return 20   # in the case of one player
 
 def request_handler(request):
-    # every request should have an ID and an action
+    # every request should have a user and an action
     if request["method"] == "GET":
         try:
             data = request['values']
@@ -49,15 +49,32 @@ def request_handler(request):
         c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int);''') # run a CREATE TABLE command
 
         if action == "waiting":
+            # displays how long before the game begins if there is at least 2 players in the game
             g = handleWaiting(c)
             conn.commit() # commit commands
             conn.close() # close connection to database
             return "Game Started!" if g == 0 else "Game starts in " + str(g) + " seconds"
+
         if(action == "display"):
+            # action to help debug it displays all the players in the player data
             things =  c.execute('''SELECT * FROM playerData;''').fetchall()
             conn.commit() # commit commands
             conn.close() # close connection to database
             return things
+        if action == "gameStatus":
+
+            # returns wether a player has won or how many players are left in the game
+            things =  c.execute('''SELECT * FROM playerData;''').fetchall()
+            if len(things) == 1:
+                # displays who won
+                conn.commit() # commit commands
+                conn.close() # close connection to database
+
+                return str(things[0][0]) + " has won the game!"
+
+            conn.commit() # commit commands
+            conn.close() # close connection to database
+            return "There are "+str(len(things))+" players remaining"
     if request["method"] == "POST":
         try:
             data = request["form"]
@@ -72,30 +89,38 @@ def request_handler(request):
 
         # handle specific POST Requests
         if (action == "initial"):
+            # players ready up and are handled according to when the last player readyd up
             g = handleStartGame(c, data)
             conn.commit() # commit commands
             conn.close() # close connection to database
             return g
-        if action == "update":
+        if action == "shot":
+            # # handles the health of each player and removes playes who are dead 
             user = data["user"]
             things =  c.execute('''SELECT * FROM playerData;''').fetchall()
             playerHealth = None
+            # finds the health of the specific player
             for each in things:
             	if each[0] == user:
             		playerHealth = each[1]
             		break
             if playerHealth == None:
+                # check to see if its valid
             	return "That player does not exist"
 
             playerHealth -= 1
-
+            # updates the table to reflect current health
             c.execute('''UPDATE playerData SET health = (?) WHERE user = (?);''',(playerHealth,user))
             if(playerHealth <= 0):
-
+                # if the update leaves a player with no health they are removed form the table
                 c.execute('''DELETE FROM playerData WHERE user = ?;''',(user,))
+                
+                things =  c.execute('''SELECT * FROM playerData;''').fetchall()
+   
                 conn.commit()
                 conn.close()
                 return str(user) + " has died"
+            
             conn.commit()
             conn.close()
             return str(user) + " took damage"
