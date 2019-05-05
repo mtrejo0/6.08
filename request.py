@@ -25,7 +25,7 @@ def handleWaiting(c):
         if (datetime.datetime.now()-most_recent_time).total_seconds() >= 20:    # check if 20 seconds have elapsed
             # game starts
             for player in pl:
-                c.execute('''INSERT into playerData VALUES (?,?,?,?);''', (player[0], 3,0,0))   # players will be initialized to 3 health
+                c.execute('''INSERT into playerData VALUES (?,?,?,?,?);''', (player[0], 3,0,0,0))   # players will be initialized to 3 health
             c.execute('''DROP TABLE IF EXISTS lobbyPlayers''')  # reset the lobby players, because we don't need them anymore at this point
             return 0    # let players know game has started
         else:
@@ -46,7 +46,7 @@ def request_handler(request):
         example_db = "__HOME__/finalProject/players.db" # just come up with name of database
         conn = sqlite3.connect(example_db)  # connect to that database (will create if it doesn't already exist)
         c = conn.cursor()  # make cursor into database (allows us to execute commands)
-        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, long float);''') # run a CREATE TABLE command
+        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, lon float, kills float);''') # run a CREATE TABLE command
 
         if action == "waiting":
             # displays how long before the game begins if there is at least 2 players in the game
@@ -82,7 +82,7 @@ def request_handler(request):
                 conn.commit() # commit commands
                 conn.close()
                 return "That player does not exist"
-                
+
             conn.commit() # commit commands
             conn.close() # close connection to database
             return health
@@ -110,7 +110,7 @@ def request_handler(request):
         example_db = "__HOME__/finalProject/players.db"
         conn = sqlite3.connect(example_db)  # connect to that database (will create if it doesn't already exist)
         c = conn.cursor()  # make cursor into database (allows us to execute commands)
-        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, lon float);''') # run a CREATE TABLE command
+        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, lon float, kills float);''') # run a CREATE TABLE command
 
         # handle specific POST Requests
         if (action == "initial"):
@@ -120,48 +120,70 @@ def request_handler(request):
             conn.close() # close connection to database
             return g
         if action == "shot":
-            # # handles the health of each player and removes playes who are dead 
+            # # handles the health of each player and removes playes who are dead
             user = data["user"]
+            origin = data["origin"]
             things =  c.execute('''SELECT * FROM playerData;''').fetchall()
+            currentKills = None
             playerHealth = None
             # finds the health of the specific player
             for each in things:
-            	if each[0] == user:
-            		playerHealth = each[1]
-            		break
+                if each[0] == user:
+                    playerHealth = each[1]
+                if each[0] == origin:
+                    currentKills = each[4]
+            if currentKills == None:
+                return "That killer doesnt exist"
             if playerHealth == None:
                 # check to see if its valid
             	return "That player does not exist"
 
             playerHealth -= 1
+
+
             # updates the table to reflect current health
             c.execute('''UPDATE playerData SET health = (?) WHERE user = (?);''',(playerHealth,user))
             if(playerHealth <= 0):
                 # if the update leaves a player with no health they are removed form the table
                 c.execute('''DELETE FROM playerData WHERE user = ?;''',(user,))
-                
+
                 things =  c.execute('''SELECT * FROM playerData;''').fetchall()
-   
+                currentKills += 1
+                c.execute('''UPDATE playerData SET kills = (?) WHERE user = (?);''',(currentKills,origin))
+
                 conn.commit()
                 conn.close()
                 return str(user) + " has died"
-            
+
             conn.commit()
             conn.close()
             return str(user) + " took damage"
         if action == "gpsUpdate":
             user = data["user"]
+            things =  c.execute('''SELECT * FROM playerData;''').fetchall()
+            names = []
+            for each in things:
+                names+= [each[0]]
+            if user not in names:
+                conn.commit()
+                conn.close()
+                return "User does not exist"
+            # return things
             lat = float(data["lat"])
             lon = float(data["lon"])
-            c.execute('''UPDATE playerData SET lat = (?) WHERE user = (?);''',(lat,user))
-            c.execute('''UPDATE playerData SET lon = (?) WHERE user = (?);''',(lon,user))
+
+            # return things
+
+            c.execute('''UPDATE playerData SET lat = (?), lon=(?) WHERE user = (?);''',(lat,lon,user))
+
+            # c.execute('''UPDATE playerData SET lon = (?) WHERE user = (?);''',(lon,user))
             conn.commit()
             conn.close()
             return "You are at "+str((lat,lon))
 
 
 
-        
+
 
     return request
 
@@ -190,4 +212,3 @@ def handleStartGame(c, data):
         things += str(player) + "\n"
 
     return things
-
