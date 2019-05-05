@@ -1,6 +1,7 @@
 import datetime
 import sqlite3
 import sys
+import json
 sys.path.append("__HOME__/finalProject")
 
 def handleWaiting(c):
@@ -46,7 +47,7 @@ def request_handler(request):
         example_db = "__HOME__/finalProject/players.db" # just come up with name of database
         conn = sqlite3.connect(example_db)  # connect to that database (will create if it doesn't already exist)
         c = conn.cursor()  # make cursor into database (allows us to execute commands)
-        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, long float);''') # run a CREATE TABLE command
+        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int, lat float, long float);''') # run a CREATE TABLE command
 
         if action == "waiting":
             # displays how long before the game begins if there is at least 2 players in the game
@@ -54,6 +55,22 @@ def request_handler(request):
             conn.commit() # commit commands
             conn.close() # close connection to database
             return "Game Started!" if g == 0 else "Game starts in " + str(g) + " seconds"
+
+        if (action == "getPlayers"):
+            players =  c.execute('''SELECT user FROM playerData;''').fetchall()
+            ret = []
+            for el in players:
+                ret.append(el[0])
+
+            return json.dumps(ret)
+
+        if (action == "getAll"):
+            players = c.execute('''SELECT * FROM playerData;''').fetchall()
+            ret = {}   # Dictionary of {player: [Life, lat, lon]}
+            for player in players:
+                temp = player[1:]
+                ret[player[0]] = temp
+            return json.dumps(ret)
 
         if(action == "display"):
             # action to help debug it displays all the players in the player data
@@ -82,7 +99,7 @@ def request_handler(request):
                 conn.commit() # commit commands
                 conn.close()
                 return "That player does not exist"
-                
+
             conn.commit() # commit commands
             conn.close() # close connection to database
             return health
@@ -120,7 +137,7 @@ def request_handler(request):
             conn.close() # close connection to database
             return g
         if action == "shot":
-            # # handles the health of each player and removes playes who are dead 
+            # # handles the health of each player and removes playes who are dead
             user = data["user"]
             things =  c.execute('''SELECT * FROM playerData;''').fetchall()
             playerHealth = None
@@ -139,13 +156,13 @@ def request_handler(request):
             if(playerHealth <= 0):
                 # if the update leaves a player with no health they are removed form the table
                 c.execute('''DELETE FROM playerData WHERE user = ?;''',(user,))
-                
+
                 things =  c.execute('''SELECT * FROM playerData;''').fetchall()
-   
+
                 conn.commit()
                 conn.close()
                 return str(user) + " has died"
-            
+
             conn.commit()
             conn.close()
             return str(user) + " took damage"
@@ -153,15 +170,24 @@ def request_handler(request):
             user = data["user"]
             lat = float(data["lat"])
             lon = float(data["lon"])
+
+            # update player locations
+            c.execute('''UPDATE playerData SET lat=(?), lon=(?) WHERE user = (?);''',(lat,lon,user))
+
             c.execute('''UPDATE playerData SET lat = (?) WHERE user = (?);''',(lat,user))
             c.execute('''UPDATE playerData SET lon = (?) WHERE user = (?);''',(lon,user))
+
+            # return location of all players
+            locs =  c.execute('''SELECT user, lat, lon FROM playerData;''').fetchall()
+            # construct JSON Response
+            ret_locs = {}
+            for i in locs:
+                ret_locs[i[0]] = (i[1], i[2])
+
+            ret_locs = json.dumps(ret_locs) # create array into JSON
             conn.commit()
             conn.close()
-            return "You are at "+str((lat,lon))
-
-
-
-        
+            return ret_locs
 
     return request
 
@@ -190,4 +216,3 @@ def handleStartGame(c, data):
         things += str(player) + "\n"
 
     return things
-
