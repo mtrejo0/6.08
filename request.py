@@ -1,6 +1,7 @@
 import datetime
 import sqlite3
 import sys
+import json
 sys.path.append("__HOME__/finalProject")
 
 def handleWaiting(c):
@@ -25,7 +26,7 @@ def handleWaiting(c):
         if (datetime.datetime.now()-most_recent_time).total_seconds() >= 20:    # check if 20 seconds have elapsed
             # game starts
             for player in pl:
-                c.execute('''INSERT into playerData VALUES (?,?,?,?,?);''', (player[0], 3,0,0,0))   # players will be initialized to 3 health
+                c.execute('''INSERT into playerData VALUES (?,?,?,?);''', (player[0], 3,0,0))   # players will be initialized to 3 health
             c.execute('''DROP TABLE IF EXISTS lobbyPlayers''')  # reset the lobby players, because we don't need them anymore at this point
             return 0    # let players know game has started
         else:
@@ -46,7 +47,7 @@ def request_handler(request):
         example_db = "__HOME__/finalProject/players.db" # just come up with name of database
         conn = sqlite3.connect(example_db)  # connect to that database (will create if it doesn't already exist)
         c = conn.cursor()  # make cursor into database (allows us to execute commands)
-        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, lon float, kills float);''') # run a CREATE TABLE command
+        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int, lat float, long float, kills, float);''') # run a CREATE TABLE command
 
         if action == "waiting":
             # displays how long before the game begins if there is at least 2 players in the game
@@ -54,6 +55,22 @@ def request_handler(request):
             conn.commit() # commit commands
             conn.close() # close connection to database
             return "Game Started!" if g == 0 else "Game starts in " + str(g) + " seconds"
+
+        if (action == "getPlayers"):
+            players =  c.execute('''SELECT user FROM playerData;''').fetchall()
+            ret = []
+            for el in players:
+                ret.append(el[0])
+
+            return json.dumps(ret)
+
+        if (action == "getAll"):
+            players = c.execute('''SELECT * FROM playerData;''').fetchall()
+            ret = {}   # Dictionary of {player: [Life, lat, lon]}
+            for player in players:
+                temp = player[1:]
+                ret[player[0]] = temp
+            return json.dumps(ret)
 
         if(action == "display"):
             # action to help debug it displays all the players in the player data
@@ -140,7 +157,6 @@ def request_handler(request):
 
             playerHealth -= 1
 
-
             # updates the table to reflect current health
             c.execute('''UPDATE playerData SET health = (?) WHERE user = (?);''',(playerHealth,user))
             if(playerHealth <= 0):
@@ -160,30 +176,26 @@ def request_handler(request):
             return str(user) + " took damage"
         if action == "gpsUpdate":
             user = data["user"]
-            things =  c.execute('''SELECT * FROM playerData;''').fetchall()
-            names = []
-            for each in things:
-                names+= [each[0]]
-            if user not in names:
-                conn.commit()
-                conn.close()
-                return "User does not exist"
-            # return things
             lat = float(data["lat"])
             lon = float(data["lon"])
 
-            # return things
+            # update player locations
+            c.execute('''UPDATE playerData SET lat=(?), lon=(?) WHERE user = (?);''',(lat,lon,user))
 
-            c.execute('''UPDATE playerData SET lat = (?), lon=(?) WHERE user = (?);''',(lat,lon,user))
+            c.execute('''UPDATE playerData SET lat = (?) WHERE user = (?);''',(lat,user))
+            c.execute('''UPDATE playerData SET lon = (?) WHERE user = (?);''',(lon,user))
 
-            # c.execute('''UPDATE playerData SET lon = (?) WHERE user = (?);''',(lon,user))
+            # return location of all players
+            locs =  c.execute('''SELECT user, lat, lon FROM playerData;''').fetchall()
+            # construct JSON Response
+            ret_locs = {}
+            for i in locs:
+                ret_locs[i[0]] = (i[1], i[2])
+
+            ret_locs = json.dumps(ret_locs) # create array into JSON
             conn.commit()
             conn.close()
-            return "You are at "+str((lat,lon))
-
-
-
-
+            return ret_locs
 
     return request
 
