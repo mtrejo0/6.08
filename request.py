@@ -26,7 +26,7 @@ def handleWaiting(c):
         if (datetime.datetime.now()-most_recent_time).total_seconds() >= 20:    # check if 20 seconds have elapsed
             # game starts
             for player in pl:
-                c.execute('''INSERT into playerData VALUES (?,?,?,?);''', (player[0], 3,0,0))   # players will be initialized to 3 health
+                c.execute('''INSERT into playerData VALUES (?,?,?,?,?);''', (player[0], 3,0,0,0))   # players will be initialized to 3 health
             c.execute('''DROP TABLE IF EXISTS lobbyPlayers''')  # reset the lobby players, because we don't need them anymore at this point
             return 0    # let players know game has started
         else:
@@ -47,7 +47,7 @@ def request_handler(request):
         example_db = "__HOME__/finalProject/players.db" # just come up with name of database
         conn = sqlite3.connect(example_db)  # connect to that database (will create if it doesn't already exist)
         c = conn.cursor()  # make cursor into database (allows us to execute commands)
-        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int, lat float, long float, kills, float);''') # run a CREATE TABLE command
+        c.execute('''CREATE TABLE IF NOT EXISTS playerData (user text, health int,lat float, lon float, kills float);''')  # run a CREATE TABLE command
 
         if action == "waiting":
             # displays how long before the game begins if there is at least 2 players in the game
