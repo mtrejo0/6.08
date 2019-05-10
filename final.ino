@@ -5,6 +5,7 @@
 #include <TFT_eSPI.h>
 #include<string.h>
 TFT_eSPI tft = TFT_eSPI();
+//LIGHTS
 //#include <Adafruit_NeoPixel.h>
 //#ifdef __AVR__
 //#include <avr/power.h>
@@ -23,103 +24,6 @@ TFT_eSPI tft = TFT_eSPI();
 #define INGAME 2
 #define DEAD 3
 //#define SUPERDEAD 4
-
-const int BUTTON_PIN = 16;
-const int BUTTON_PIN2 = 5;
-const int BUTTON_PIN3 = 17;
-
-uint32_t counter; //used for timing
-uint32_t counterlaser; //used for timing
-const uint32_t pwm_channel = 0; //hardware pwm channel used in second part
-//#define base 0
-//#define first 1
-//#define second 2
-//#define third 3
-//#define laserbase 0
-//#define laserfirst 1
-//#define lasersecond 2
-//#define baselife 0
-//#define firstlife 1
-int statelife = 0;
-uint32_t counterlife;
-int state = 0;
-int statebullet = 0;
-int ammo = 20;
-uint32_t time_counter;
-const uint32_t DT = 50; //sample period
-const uint32_t FILTER_ORDER = 4; //size of filter
-float values[50] = {0, 0, 0, 0};
-int indx = 0;
-int life = 3;
-
-class PWM_608
-{
-  public:
-    int pin; //digital pin class controls
-    int period; //period of PWM signal (in milliseconds)
-    int on_amt; //duration of "on" state of PWM (in milliseconds)
-    PWM_608(int op, float frequency); //constructor op = output pin, frequency=freq of pwm signal in Hz
-    void set_duty_cycle(float duty_cycle); //sets duty cycle to be value between 0 and 1.0
-    void update(); //updates state of system based on millis() and duty cycle
-};
-
-//add your PWM_608 class definitions here:
-PWM_608::PWM_608(int op, float frequency) {
-  pin = op;
-  period = int((1 / frequency) * 1000);
-  on_amt = 0;
-}
-
-void PWM_608::update() {
-  if (millis() % period == 0) {
-    digitalWrite(pin, HIGH);
-  }
-  if (millis() % period >= on_amt) {
-    digitalWrite(pin, LOW);
-  }
-  if (millis() % period > 0 && millis() % period < on_amt) {
-    digitalWrite(pin, HIGH);
-  }
-}
-
-void PWM_608::set_duty_cycle(float duty_cycle) {
-  if (duty_cycle < 0) {
-    duty_cycle = 0;
-  }
-  else if (duty_cycle > 1) {
-    duty_cycle = 1;
-  }
-  on_amt = duty_cycle * period;
-}
-
-PWM_608 laser(BUTTON_PIN, 10); //create instance of PWM to control backlight on pin 12, operating at 50 Hz
-
-HardwareSerial mySoftwareSerial(2);
-DFRobotDFPlayerMini myDFPlayer;
-void printDetail(uint8_t type, int value);
-
-int out_buffer_size;
-const int RESPONSE_TIMEOUT = 6000; //ms to wait for response from host
-const uint16_t OUT_BUFFER_SIZE = 1000; //size of buffer to hold HTTP response
-char response[OUT_BUFFER_SIZE]; //char array buffer to hold HTTP request
-const uint16_t IN_BUFFER_SIZE = 1000; //size of buffer to hold HTTP request
-char request_buffer[IN_BUFFER_SIZE]; //char array buffer to hold HTTP request
-char response_buffer[OUT_BUFFER_SIZE]; //char array buffer to hold HTTP response
-//char network[] = "6s08";  //SSID for 6.08 Lab
-//char password[] = "iesc6s08"; //Password for 6.08 Lab
-char network[] = "MIT GUEST";
-char password[] = "";
-//char network[] = "Derek's iPhone";
-//char password[] = "asdfghjkl";
-char host[] = "608dev.net";
-char username[] = "Derek";
-
-
-int timer;
-bool shot;
-int lives = 3;
-int bullets = 10;
-int state2;
 
 class Button {
   public:
@@ -193,8 +97,97 @@ class Button {
     }
 };
 
-Button button3(BUTTON_PIN3);
+class PWM_608
+{
+  public:
+    int pin; //digital pin class controls
+    int period; //period of PWM signal (in milliseconds)
+    int on_amt; //duration of "on" state of PWM (in milliseconds)
+    PWM_608(int op, float frequency); //constructor op = output pin, frequency=freq of pwm signal in Hz
+    void set_duty_cycle(float duty_cycle); //sets duty cycle to be value between 0 and 1.0
+    void update(); //updates state of system based on millis() and duty cycle
+};
 
+//add your PWM_608 class definitions here:
+PWM_608::PWM_608(int op, float frequency) {
+  pin = op;
+  period = int((1 / frequency) * 1000);
+  on_amt = 0;
+}
+
+void PWM_608::update() {
+  if (millis() % period == 0) {
+    digitalWrite(pin, HIGH);
+  }
+  if (millis() % period >= on_amt) {
+    digitalWrite(pin, LOW);
+  }
+  if (millis() % period > 0 && millis() % period < on_amt) {
+    digitalWrite(pin, HIGH);
+  }
+}
+
+void PWM_608::set_duty_cycle(float duty_cycle) {
+  if (duty_cycle < 0) {
+    duty_cycle = 0;
+  }
+  else if (duty_cycle > 1) {
+    duty_cycle = 1;
+  }
+  on_amt = duty_cycle * period;
+}
+
+const int BUTTON_PIN = 16; // laser
+const int BUTTON_PIN2 = 5; // button for laser
+const int BUTTON_PIN3 = 17; // for getting in the game
+uint32_t counter; //used for timing
+uint32_t counterlaser; //used for timing
+const uint32_t pwm_channel = 0; //hardware pwm channel used in second part
+//#define base 0
+//#define first 1
+//#define second 2
+//#define third 3
+//#define laserbase 0
+//#define laserfirst 1
+//#define lasersecond 2
+//#define baselife 0
+//#define firstlife 1
+
+int out_buffer_size;
+const int RESPONSE_TIMEOUT = 6000; //ms to wait for response from host
+const uint16_t OUT_BUFFER_SIZE = 1000; //size of buffer to hold HTTP response
+char response[OUT_BUFFER_SIZE]; //char array buffer to hold HTTP request
+const uint16_t IN_BUFFER_SIZE = 1000; //size of buffer to hold HTTP request
+char request_buffer[IN_BUFFER_SIZE]; //char array buffer to hold HTTP request
+char response_buffer[OUT_BUFFER_SIZE]; //char array buffer to hold HTTP response
+char host[] = "608dev.net";
+char username[] = "Derek";
+//game variables
+int timer;
+bool shot;
+int lives = 3;
+int life = 3;
+int bullets = 10;
+int state_for_game;
+int statelife = 0;
+uint32_t counterlife;
+int state = 0;
+int statebullet = 0;
+int ammo = 20;
+uint32_t time_counter;
+
+//instances of classes
+PWM_608 laser(BUTTON_PIN, 10); //create instance of PWM to control backlight on pin 12, operating at 50 Hz
+Button button3(BUTTON_PIN3);
+HardwareSerial mySoftwareSerial(2);
+DFRobotDFPlayerMini myDFPlayer;
+
+//char network[] = "6s08";  //SSID for 6.08 Lab
+//char password[] = "iesc6s08"; //Password for 6.08 Lab
+char network[] = "MIT GUEST";
+char password[] = "";
+
+void printDetail(uint8_t type, int value);
 void setup() {
   Serial.begin(115200); //for debugging if needed.
   // Wifi beginning stuff
@@ -218,11 +211,6 @@ void setup() {
     Serial.println(WiFi.status());
     ESP.restart(); // restart the ESP (proper way)
   }             // Set up serial port
- 
-//  pinMode(BUTTON_PIN, INPUT_PULLUP);
-//  pinMode(BUTTON_PIN2, INPUT_PULLUP);
-
-
   tft.init();
   tft.setRotation(2);
   tft.setTextSize(1);
@@ -268,7 +256,6 @@ void setup() {
   Serial.println(F("readFileCountsInFolder--------------------"));
   Serial.println(myDFPlayer.readFileCountsInFolder(3)); //read fill counts in folder SD:/03
   Serial.println(F("--------------------"));
-
   Serial.println(F("myDFPlayer.play(1)"));
   myDFPlayer.play(1);  //Play the first mp3
   shot = false;
@@ -283,7 +270,7 @@ void setup() {
   pinMode(BUTTON_PIN2, INPUT_PULLUP); //controlling TFT with hardware PWM (second part of lab)
   pinMode(BUTTON_PIN3, INPUT_PULLUP); 
   counter = millis();
-  state2=INITIALIZE;
+  state_for_game=INITIALIZE;
   // This is for Trinket 5V 16MHz, you can remove these three lines if you are not using a Trinket
 //#if defined (__AVR_ATtiny85__)
 //  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
@@ -299,7 +286,6 @@ void setup() {
 
 
 void loop() {
-  tft.setCursor(0, 15, 1);
   //uint8_t button_state = digitalRead(6);
     state_machine();
 //  uint8_t button_state = digitalRead(BUTTON_PIN);
@@ -312,19 +298,17 @@ void loop() {
 
 void state_machine()
 {
-   //Serial.println(state2);
-  uint8_t flag = button3.update();
- // Serial.println(flag);
-  switch (state2)
+    uint8_t flag = button3.update();
+    // Serial.println(flag);
+  switch (state_for_game)
   {
     case INITIALIZE:
     if(flag==2){
       post_for_starting_game();
-      state2 = WAITING;
+      state_for_game = WAITING;
       lives = 3;
       bullets = 10;
       tft.fillScreen(TFT_BLACK);
-     
     }
       break;
     case WAITING:
@@ -334,14 +318,14 @@ void state_machine()
       {
         tft.fillScreen(TFT_BLACK);
         tft.println("Game Started!");
-        state2 = INGAME;
+        state_for_game = INGAME;
       }
       break;
     case INGAME: {
         // myDFPlayer.pause();
-        tft.println(lives);
         get_request_status();
-       // flag_for_reload = button2.update();
+        tft.setCursor(0,0,1);
+        //tft.println(lives);
         float reading = analogRead(A3) * 3.3 / 4096;
         //Serial.println(reading);
         if (millis() - timer > 5000)
@@ -356,7 +340,8 @@ void state_machine()
           post_for_getting_shot();
           Serial.println(lives);
           if (lives == 0) {
-            state2 = DEAD;
+            tft.fillScreen(TFT_BLACK);
+            state_for_game = DEAD;
           }
           timer = millis();
           tft.fillScreen(TFT_RED);
@@ -533,13 +518,13 @@ uint8_t char_append(char* buff, char c, uint16_t buff_size) {
 void do_http_request(char* host, char* request, char* response, uint16_t response_size, uint16_t response_timeout, uint8_t serial){
   WiFiClient client; //instantiate a client object
   if (client.connect(host, 80)) { //try to connect to host on port 80
-    if (serial) Serial.print(request);//Can do one-line if statements in C without curly braces
+    if (serial) ;//Can do one-line if statements in C without curly braces
     client.print(request);
     memset(response, 0, response_size); //Null out (0 is the value of the null terminator '\0') entire buffer
     uint32_t count = millis();
     while (client.connected()) { //while we remain connected read out data coming back
       client.readBytesUntil('\n',response,response_size);
-      if (serial) Serial.println(response);
+//      if (serial) Serial.println(response);
       if (strcmp(response,"\r")==0) { //found a blank line!
         break;
       }
@@ -551,9 +536,9 @@ void do_http_request(char* host, char* request, char* response, uint16_t respons
     while (client.available()) { //read out remaining text (body of response)
       char_append(response,client.read(),OUT_BUFFER_SIZE);
     }
-    if (serial) Serial.println(response);
+//    if (serial) Serial.println(response);
     client.stop();
-    if (serial) Serial.println("-----------");  
+    if (serial) ; 
   }else{
     if (serial) Serial.println("connection failed :/");
     if (serial) Serial.println("wait 0.5 sec...");
@@ -673,7 +658,8 @@ void get_request_status()
       sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
       do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
       Serial.println(response);
-      tft.println(response);
+      tft.setCursor(0,40,1);
+     // tft.println(response);
   }
 
   void get_request_waiting_string()
@@ -685,7 +671,7 @@ void get_request_status()
       sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
       do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
       Serial.println(response);
-      if (strlen(response)<25) {tft.fillScreen(TFT_BLACK);}
+      //if (strlen(response)<25) {tft.fillScreen(TFT_BLACK);}
       tft.setCursor(0,0,1);
       tft.println(response);
       //Serial.println(strlen(response));
@@ -701,10 +687,7 @@ void get_request_waiting()
       sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
       do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
       Serial.println(response);
-     // if (strlen(response)<25) {tft.fillScreen(TFT_BLACK);}
-      //tft.setCursor(0,0,1);
       tft.println(response);
-      //Serial.println(strlen(response));
   }
 
 void post_for_starting_game()
