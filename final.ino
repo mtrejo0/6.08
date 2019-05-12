@@ -143,10 +143,10 @@ const int BUTTON_PIN3 = 17; // for getting in the game
 uint32_t counter; //used for timing
 uint32_t counterlaser; //used for timing
 const uint32_t pwm_channel = 0; //hardware pwm channel used in second part
-//#define base 0
-//#define first 1
-//#define second 2
-//#define third 3
+#define base 0
+#define first 1
+#define second 2
+#define third 3
 //#define laserbase 0
 //#define laserfirst 1
 //#define lasersecond 2
@@ -215,6 +215,7 @@ void setup() {
   tft.setRotation(2);
   tft.setTextSize(1);
   tft.fillScreen(TFT_BLACK);
+  tft.setCursor(0,0,1);
   tft.print("Long Press to start the game");
 
   //mp3 player stuff
@@ -271,6 +272,7 @@ void setup() {
   pinMode(BUTTON_PIN3, INPUT_PULLUP); 
   counter = millis();
   state_for_game=INITIALIZE;
+  
   // This is for Trinket 5V 16MHz, you can remove these three lines if you are not using a Trinket
 //#if defined (__AVR_ATtiny85__)
 //  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
@@ -312,20 +314,26 @@ void state_machine()
     }
       break;
     case WAITING:
-      get_request_waiting_string();
+
+      
       get_request_waiting();
+      // make the time before a game display
       if (strcmp(response, "0") == 0)
       {
         tft.fillScreen(TFT_BLACK);
-        tft.println("Game Started!");
+        get_request_waiting_string();
+        
         state_for_game = INGAME;
       }
       break;
     case INGAME: {
+        uint8_t button_state = digitalRead(BUTTON_PIN);
+        uint8_t button_state2 = digitalRead(BUTTON_PIN2);
+        laserbutton(button_state, button_state2);
         // myDFPlayer.pause();
         get_request_status();
         tft.setCursor(0,0,1);
-        //tft.println(lives);
+        tft.println(lives);
         float reading = analogRead(A3) * 3.3 / 4096;
         //Serial.println(reading);
         if (millis() - timer > 5000)
@@ -339,12 +347,15 @@ void state_machine()
           shot = true;
           post_for_getting_shot();
           Serial.println(lives);
+          
+          timer = millis();
+          tft.fillScreen(TFT_RED);
+          
           if (lives == 0) {
             tft.fillScreen(TFT_BLACK);
             state_for_game = DEAD;
           }
-          timer = millis();
-          tft.fillScreen(TFT_RED);
+          
         }
         //shooting and sound effects
 //        if (flag_for_reload == 1)
@@ -361,41 +372,47 @@ void state_machine()
       break;
 
     case DEAD:
-      tft.println("You are dead.");
+      
+
       get_request_status();
+      if(flag == 2){
+        setup();
+        
+        
+      }
       break;
   }
 }
 
-//void laserbutton(int buttonstate1, int buttonstate2) {
-//  switch (state) {
-//    case base:
-//      if (buttonstate2 == 1) {
-//        state = 1;
-//        counter = millis();
-//      }
-//      if (ammo == 0) {
-//        ledcWrite(pwm_channel, 0);
-//        state = 3;
-//        counter = millis();
-//      }
-//      break;
-//    case first:
-//      if (millis() - counter > 1000) {
-//        ledcWrite(pwm_channel, 0);
-//        state = 2;
-//      }
-//      else if (buttonstate2 == 0) {
-//        ledcWrite(pwm_channel, 4095);
-//        state = 0;
-//      }
-//    case second :
-//      if (millis() - counter > 3000) {
-//        ledcWrite(pwm_channel, 4095);
-//        state = 0;
-//        ammo = 20;
-//      }
-//      break;
+void laserbutton(int buttonstate1, int buttonstate2) {
+  switch (state) {
+    case base:
+      if (buttonstate2 == 1) {
+        state = 1;
+        counter = millis();
+      }
+      if (ammo == 0) {
+        ledcWrite(pwm_channel, 0);
+        state = 3;
+        counter = millis();
+      }
+      break;
+    case first:
+      if (millis() - counter > 1000) {
+        ledcWrite(pwm_channel, 0);
+        state = 2;
+      }
+      else if (buttonstate2 == 0) {
+        ledcWrite(pwm_channel, 4095);
+        state = 0;
+      }
+    case second :
+      if (millis() - counter > 3000) {
+        ledcWrite(pwm_channel, 4095);
+        state = 0;
+        ammo = 20;
+      }
+      break;
 //    case third:
 //      if (millis() - counter > 3000) {
 //        ledcWrite(pwm_channel, 4095);
@@ -406,9 +423,9 @@ void state_machine()
 //        }
 //        strip.show();
 //      }
-//      break;
-//  }
-//}
+      break;
+  }
+}
 //
 
 
@@ -659,7 +676,7 @@ void get_request_status()
       do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
       Serial.println(response);
       tft.setCursor(0,40,1);
-     // tft.println(response);
+      tft.println(response);
   }
 
   void get_request_waiting_string()
@@ -674,6 +691,7 @@ void get_request_status()
       //if (strlen(response)<25) {tft.fillScreen(TFT_BLACK);}
       tft.setCursor(0,0,1);
       tft.println(response);
+      tft.fillScreen(TFT_PINK);
       //Serial.println(strlen(response));
   }
 
