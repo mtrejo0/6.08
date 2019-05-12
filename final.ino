@@ -179,7 +179,7 @@ int ammo = 20;
 uint32_t time_counter;
 
 //instances of classes
-PWM_608 laser(BUTTON_PIN, 10); //create instance of PWM to control backlight on pin 12, operating at 50 Hz
+PWM_608 laser(BUTTON_PIN, 500); //create instance of PWM to control backlight on pin 12, operating at 50 Hz
 Button button3(BUTTON_PIN3);
 HardwareSerial mySoftwareSerial(2);
 DFRobotDFPlayerMini myDFPlayer;
@@ -334,6 +334,10 @@ void state_machine()
       Serial.println(global_time);
         uint8_t button_state = digitalRead(BUTTON_PIN);
         uint8_t button_state2 = digitalRead(BUTTON_PIN2);
+        Serial.println(button_state);
+        Serial.println(button_state2);
+        if(button_state2==1)
+        {Serial.println(millis()-global_time);}
         laserbutton(button_state, button_state2);
         // myDFPlayer.pause();
         //get_request_status();
@@ -351,8 +355,9 @@ void state_machine()
         {
           lives--;
           shot = true;
+          int x =millis()-global_time;
           post_for_getting_shot(millis()-global_time);
-          Serial.println(lives);
+          Serial.println(x);
           
           timer = millis();
           tft.fillScreen(TFT_RED);
@@ -426,8 +431,8 @@ void laserbutton(int buttonstate1, int buttonstate2) {
 //          state = 0;
 //        }
 //        strip.show();
-//      }
-      break;
+////      }
+//      break;
   }
 }
 //
