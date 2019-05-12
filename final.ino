@@ -4,7 +4,6 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include<string.h>
-#include <TimeLib.h>
 TFT_eSPI tft = TFT_eSPI();
 //LIGHTS
 //#include <Adafruit_NeoPixel.h>
@@ -233,7 +232,7 @@ void setup() {
     Serial.println(F("Unable to begin:"));
     Serial.println(F("1.Please recheck the connection!"));
     Serial.println(F("2.Please insert the SD card!"));
-    while (true);
+//    while (true);
   }
   Serial.println(F("DFPlayer Mini online."));
   myDFPlayer.setTimeOut(500); //Set serial communictaion time out 500ms
@@ -327,7 +326,7 @@ void state_machine()
         tft.fillScreen(TFT_BLACK);
         get_("waitingString");
         get_("getTime");
-        global_time=atoi(response);
+        global_time=millis();
         state_for_game = INGAME;
       }
       break;
@@ -352,7 +351,7 @@ void state_machine()
         {
           lives--;
           shot = true;
-          post_for_getting_shot(10);
+          post_for_getting_shot(millis()-global_time);
           Serial.println(lives);
           
           timer = millis();
@@ -379,9 +378,7 @@ void state_machine()
       break;
 
     case DEAD:
-      
-
-      get_request_status();
+      get_("gameStatus");
       if(flag == 2){
         setup();
         
@@ -688,60 +685,60 @@ void get_(char* action)
 
 }
 
-void get_request_status()
-{
-  char request[500];
-  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=gameStatus HTTP/1.1\r\n", "");
-      sprintf(request+strlen(request),"Host: %s\r\n",host);
-      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-      Serial.println(response);
-      tft.setCursor(0,40,1);
-      tft.println(response);
-  }
+//void get_request_status()
+//{
+//  char request[500];
+//  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=gameStatus HTTP/1.1\r\n", "");
+//      sprintf(request+strlen(request),"Host: %s\r\n",host);
+//      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
+//      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
+//      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
+//      Serial.println(response);
+//      tft.setCursor(0,40,1);
+//      tft.println(response);
+//  }
+//
+//  void get_request_waiting_string()
+//{
+//  char request[500];
+//  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=waitingString HTTP/1.1\r\n", "");
+//      sprintf(request+strlen(request),"Host: %s\r\n",host);
+//      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
+//      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
+//      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
+//      Serial.println(response);
+//      //if (strlen(response)<25) {tft.fillScreen(TFT_BLACK);}
+//      tft.setCursor(0,0,1);
+//      tft.println(response);
+//      tft.fillScreen(TFT_PINK);
+//      //Serial.println(strlen(response));
+//  }
+//
+//void get_request_waiting()
+//{
+//  char request[500];
+//  tft.fillScreen(TFT_BLACK);
+//  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=waiting HTTP/1.1\r\n", "");
+//      sprintf(request+strlen(request),"Host: %s\r\n",host);
+//      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
+//      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
+//      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
+//      Serial.println(response);
+//      tft.println(response);
+//  }
 
-  void get_request_waiting_string()
-{
-  char request[500];
-  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=waitingString HTTP/1.1\r\n", "");
-      sprintf(request+strlen(request),"Host: %s\r\n",host);
-      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-      Serial.println(response);
-      //if (strlen(response)<25) {tft.fillScreen(TFT_BLACK);}
-      tft.setCursor(0,0,1);
-      tft.println(response);
-      tft.fillScreen(TFT_PINK);
-      //Serial.println(strlen(response));
-  }
-
-void get_request_waiting()
-{
-  char request[500];
-  tft.fillScreen(TFT_BLACK);
-  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=waiting HTTP/1.1\r\n", "");
-      sprintf(request+strlen(request),"Host: %s\r\n",host);
-      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-      Serial.println(response);
-      tft.println(response);
-  }
-
-  void get_time()
-{
-  char request[500];
-  tft.fillScreen(TFT_BLACK);
-  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=getTime HTTP/1.1\r\n", "");
-      sprintf(request+strlen(request),"Host: %s\r\n",host);
-      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-      Serial.println(response);
-      tft.println(response);
-  }
+//  void get_time()
+//{
+//  char request[500];
+//  tft.fillScreen(TFT_BLACK);
+//  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=getTime HTTP/1.1\r\n", "");
+//      sprintf(request+strlen(request),"Host: %s\r\n",host);
+//      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
+//      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
+//      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
+//      Serial.println(response);
+//      tft.println(response);
+//  }
 
 void post_for_starting_game()
 {     tft.fillScreen(TFT_BLACK);
