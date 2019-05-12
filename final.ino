@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include<string.h>
+#include <TimeLib.h>
 TFT_eSPI tft = TFT_eSPI();
 //LIGHTS
 //#include <Adafruit_NeoPixel.h>
@@ -140,6 +141,7 @@ void PWM_608::set_duty_cycle(float duty_cycle) {
 const int BUTTON_PIN = 16; // laser
 const int BUTTON_PIN2 = 5; // button for laser
 const int BUTTON_PIN3 = 17; // for getting in the game
+int global_time;
 uint32_t counter; //used for timing
 uint32_t counterlaser; //used for timing
 const uint32_t pwm_channel = 0; //hardware pwm channel used in second part
@@ -161,6 +163,7 @@ const uint16_t IN_BUFFER_SIZE = 1000; //size of buffer to hold HTTP request
 char request_buffer[IN_BUFFER_SIZE]; //char array buffer to hold HTTP request
 char response_buffer[OUT_BUFFER_SIZE]; //char array buffer to hold HTTP response
 char host[] = "608dev.net";
+char host2[] = "currentmillis.com";
 char username[] = "Derek";
 //game variables
 int timer;
@@ -186,7 +189,7 @@ DFRobotDFPlayerMini myDFPlayer;
 //char password[] = "iesc6s08"; //Password for 6.08 Lab
 char network[] = "MIT GUEST";
 char password[] = "";
-
+char action[10];
 void printDetail(uint8_t type, int value);
 void setup() {
   Serial.begin(115200); //for debugging if needed.
@@ -305,6 +308,7 @@ void state_machine()
   switch (state_for_game)
   {
     case INITIALIZE:
+//    int x=now();
     if(flag==2){
       post_for_starting_game();
       state_for_game = WAITING;
@@ -316,24 +320,27 @@ void state_machine()
     case WAITING:
 
       
-      get_request_waiting();
+      get_("waitingString");
       // make the time before a game display
-      if (strcmp(response, "0") == 0)
+      if (strcmp(response, "0 seconds remaining!") == 0)
       {
         tft.fillScreen(TFT_BLACK);
-        get_request_waiting_string();
-        
+        get_("waitingString");
+        get_("getTime");
+        global_time=atoi(response);
         state_for_game = INGAME;
       }
       break;
     case INGAME: {
+      Serial.println(global_time);
         uint8_t button_state = digitalRead(BUTTON_PIN);
         uint8_t button_state2 = digitalRead(BUTTON_PIN2);
         laserbutton(button_state, button_state2);
         // myDFPlayer.pause();
-        get_request_status();
+        //get_request_status();
         tft.setCursor(0,0,1);
-        tft.println(lives);
+        
+        //tft.println(lives);
         float reading = analogRead(A3) * 3.3 / 4096;
         //Serial.println(reading);
         if (millis() - timer > 5000)
@@ -345,7 +352,7 @@ void state_machine()
         {
           lives--;
           shot = true;
-          post_for_getting_shot();
+          post_for_getting_shot(10);
           Serial.println(lives);
           
           timer = millis();
@@ -666,6 +673,21 @@ void music_player()
  // }
 }
 
+void get_(char* action)
+{
+  char request[500];
+  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=%s HTTP/1.1\r\n",action);
+      sprintf(request+strlen(request),"Host: %s\r\n",host);
+      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
+      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
+      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
+      Serial.println(response);
+      tft.setCursor(0,40,1);
+      tft.println(response);
+
+
+}
+
 void get_request_status()
 {
   char request[500];
@@ -708,6 +730,19 @@ void get_request_waiting()
       tft.println(response);
   }
 
+  void get_time()
+{
+  char request[500];
+  tft.fillScreen(TFT_BLACK);
+  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=getTime HTTP/1.1\r\n", "");
+      sprintf(request+strlen(request),"Host: %s\r\n",host);
+      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
+      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
+      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
+      Serial.println(response);
+      tft.println(response);
+  }
+
 void post_for_starting_game()
 {     tft.fillScreen(TFT_BLACK);
       char body[200]; //for body;
@@ -727,27 +762,10 @@ void post_for_starting_game()
      
   }
 
-  void post_for_getting_shot()
+  void post_for_getting_shot(int time_of_shot)
 { 
       char body[200]; //for body;
-      sprintf(body,"user=Derek&action=shot");//generate body, posting to User, 1 step
-      //body_len = strlen(body); //calculate body length (for header reporting)
-      sprintf(request_buffer,"POST http://608dev.net/sandbox/sc/moisest/finalProject/request.py HTTP/1.1\r\n");
-      strcat(request_buffer,"Host: 608dev.net\r\n");
-      strcat(request_buffer,"Content-Type: application/x-www-form-urlencoded\r\n");
-      sprintf(request_buffer+strlen(request_buffer),"Content-Length: %d\r\n", strlen(body)); //append string formatted to end of request buffer
-      strcat(request_buffer,"\r\n"); //new line from header to body
-      strcat(request_buffer,body); //body
-      strcat(request_buffer,"\r\n"); //header
-      Serial.println(request_buffer);
-      do_http_request("608dev.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);      
-     
-  }
-
-   void post_for_ammo_lives()
-{ 
-      char body[200]; //for body;
-      sprintf(body,"user=Derek&action=shot");//generate body, posting to User, 1 step
+      sprintf(body,"user=Derek&action=shot&timeShot=%d",time_of_shot);//generate body, posting to User, 1 step
       //body_len = strlen(body); //calculate body length (for header reporting)
       sprintf(request_buffer,"POST http://608dev.net/sandbox/sc/moisest/finalProject/request.py HTTP/1.1\r\n");
       strcat(request_buffer,"Host: 608dev.net\r\n");
