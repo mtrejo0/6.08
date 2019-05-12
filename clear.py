@@ -11,5 +11,6 @@ def request_handler(request):
 	conn = sqlite3.connect(example_db)  # connect to that database (will create if it doesn't already exist)
 	c = conn.cursor()  # make cursor into database (allows us to execute commands)
 	c.execute('''DROP TABLE IF EXISTS playerData ;''') # run a CREATE TABLE command
+	c.execute('''DROP TABLE IF EXISTS lobbyPlayers ;''') # run a CREATE TABLE command
 	conn.commit() # commit commands
 	conn.close() # close connection to database
