@@ -6,14 +6,14 @@
 #include<string.h>
 TFT_eSPI tft = TFT_eSPI();
 //LIGHTS
-//#include <Adafruit_NeoPixel.h>
-//#ifdef __AVR__
-//#include <avr/power.h>
-///#endif
-//#define PIN 19// Parameter 1 = number of pixels in strip
-//#define PINLIFE 21
-//Adafruit_NeoPixel strip = Adafruit_NeoPixel(20, PIN, NEO_GRB + NEO_KHZ800);
-//Adafruit_NeoPixel striplife = Adafruit_NeoPixel(3, PINLIFE, NEO_GRB + NEO_KHZ800);
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+#include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+#endif
+#define PIN 19// Parameter 1 = number of pixels in strip
+#define PINLIFE 21
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(20, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel striplife = Adafruit_NeoPixel(3, PINLIFE, NEO_GRB + NEO_KHZ800);
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
@@ -144,15 +144,16 @@ int global_time;
 uint32_t counter; //used for timing
 uint32_t counterlaser; //used for timing
 const uint32_t pwm_channel = 0; //hardware pwm channel used in second part
+
 #define base 0
 #define first 1
 #define second 2
 #define third 3
-//#define laserbase 0
-//#define laserfirst 1
-//#define lasersecond 2
-//#define baselife 0
-//#define firstlife 1
+#define laserbase 0
+#define laserfirst 1
+#define lasersecond 2
+#define baselife 0
+#define firstlife 1
 
 int out_buffer_size;
 const int RESPONSE_TIMEOUT = 6000; //ms to wait for response from host
@@ -162,14 +163,11 @@ const uint16_t IN_BUFFER_SIZE = 1000; //size of buffer to hold HTTP request
 char request_buffer[IN_BUFFER_SIZE]; //char array buffer to hold HTTP request
 char response_buffer[OUT_BUFFER_SIZE]; //char array buffer to hold HTTP response
 char host[] = "608dev.net";
-char host2[] = "currentmillis.com";
-char username[] = "Derek";
+char username[] = "Moises";
 //game variables
 int timer;
 bool shot;
 int lives = 3;
-int life = 3;
-int bullets = 10;
 int state_for_game;
 int statelife = 0;
 uint32_t counterlife;
@@ -217,7 +215,7 @@ void setup() {
   tft.setRotation(2);
   tft.setTextSize(1);
   tft.fillScreen(TFT_BLACK);
-  tft.setCursor(0,0,1);
+  tft.setCursor(0, 0, 1);
   tft.print("Long Press to start the game");
 
   //mp3 player stuff
@@ -232,12 +230,12 @@ void setup() {
     Serial.println(F("Unable to begin:"));
     Serial.println(F("1.Please recheck the connection!"));
     Serial.println(F("2.Please insert the SD card!"));
-//    while (true);
+    //    while (true);
   }
   Serial.println(F("DFPlayer Mini online."));
   myDFPlayer.setTimeOut(500); //Set serial communictaion time out 500ms
   //----Set volume----
-  myDFPlayer.volume(25);  //Set volume value (0~30).
+  myDFPlayer.volume(10);  //Set volume value (0~30).
   myDFPlayer.volumeUp(); //Volume Up
   myDFPlayer.volumeDown(); //Volume Down
   //----Set different EQ----
@@ -263,62 +261,80 @@ void setup() {
   myDFPlayer.play(1);  //Play the first mp3
   shot = false;
   timer = millis();
-//  ledcSetup(10, 2000, 12);//create pwm channel, @50 Hz, with 12 bits of precision
-////  ledcAttachPin(17, 10); //link pwm channel to IO pin 14
-//  ledcWrite(10, 2048);
   ledcSetup(pwm_channel, 10, 12);//create pwm channel, @50 Hz, with 12 bits of precision
   ledcAttachPin(16, pwm_channel); //link pwm channel to IO pin 14
   ledcWrite(pwm_channel, 4095);
   pinMode(BUTTON_PIN, OUTPUT); //controlling TFT with hardware PWM (second part of lab)
   pinMode(BUTTON_PIN2, INPUT_PULLUP); //controlling TFT with hardware PWM (second part of lab)
-  pinMode(BUTTON_PIN3, INPUT_PULLUP); 
+  pinMode(BUTTON_PIN3, INPUT_PULLUP);
   counter = millis();
-  state_for_game=INITIALIZE;
-  
-  // This is for Trinket 5V 16MHz, you can remove these three lines if you are not using a Trinket
-//#if defined (__AVR_ATtiny85__)
-//  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
-//#endif
-//  strip.begin();
-//  strip.setBrightness(230);
-//  striplife.begin();
-//  striplife.setBrightness(230);
-//  strip.show(); // Initialize all pixels to 'off'
-//  striplife.show();
+  state_for_game = INITIALIZE;
 
+  //   This is for Trinket 5V 16MHz, you can remove these three lines if you are not using a Trinket
+#if defined (__AVR_ATtiny85__)
+  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
+#endif
+  strip.begin();
+  strip.setBrightness(40);
+  striplife.begin();
+  striplife.setBrightness(40);
+  strip.show(); // Initialize all pixels to 'off'
+  striplife.show();
+  for (int j = 0; j < 20; j++) {
+    strip.setPixelColor(j, strip.Color(255, 255, 255));
+  }
+  strip.show();
+  for (int j = 0; j < 3; j++) {
+    striplife.setPixelColor(j, strip.Color(0, 255, 0));
+  }
+  striplife.show();
 }
 
 
 void loop() {
   //uint8_t button_state = digitalRead(6);
-    state_machine();
-//  uint8_t button_state = digitalRead(BUTTON_PIN);
-//  uint8_t button_state2 = digitalRead(BUTTON_PIN2);
-//  laser.update(); //callupdate as fast as possible on our software PWM object
-//  laserbutton(button_state, button_state2);
-//  LEDbullet(button_state2);
-//  LEDLife(lives);
+  state_machine();
+  uint8_t button_state = digitalRead(BUTTON_PIN);
+  uint8_t button_state2 = digitalRead(BUTTON_PIN2);
+  laser.update(); //callupdate as fast as possible on our software PWM object
+  //  laserbutton(button_state, button_state2);
+  //  LEDbullet(button_state2);
+  //  LEDLife(lives);
+  //  Serial.print("button1:");
+  //  Serial.print(button_state);
+  //  Serial.print("    ");
+  //  Serial.print("button2:");
+  //  Serial.print(button_state2);
+  //  Serial.print("    ");
+  //  Serial.print("state:");
+  //  Serial.print(state);
+  //  Serial.print("    ");
+  //  Serial.print("laserstate:");
+  //  Serial.print(statebullet);
+  //  Serial.print("    ");
+  //  Serial.print("gamestate: ");
+  Serial.print("gamestate: ");
+  Serial.print(state_for_game);
+  Serial.print(" lives: ");
+  Serial.println(lives);
 }
 
-void state_machine()
-{
-    uint8_t flag = button3.update();
-    // Serial.println(flag);
+void state_machine() {
+  uint8_t flag = button3.update();
   switch (state_for_game)
   {
     case INITIALIZE:
-//    int x=now();
-    if(flag==2){
-      post_for_starting_game();
-      state_for_game = WAITING;
-      lives = 3;
-      bullets = 10;
-      tft.fillScreen(TFT_BLACK);
-    }
+      //    int x=now();
+      if (flag == 2) {
+        post_for_starting_game();
+        state_for_game = WAITING;
+        lives = 3;
+        tft.fillScreen(TFT_BLACK);
+      }
       break;
     case WAITING:
 
-      
+
       get_("waitingString");
       // make the time before a game display
       if (strcmp(response, "0 seconds remaining!") == 0)
@@ -326,68 +342,101 @@ void state_machine()
         tft.fillScreen(TFT_BLACK);
         get_("waitingString");
         get_("getTime");
-        global_time=millis();
+        global_time = millis();
         state_for_game = INGAME;
       }
       break;
     case INGAME: {
-      Serial.println(global_time);
+       myDFPlayer.pause();
+        float reading1 = analogRead(A3) * 3.3 / 4096;
+//        float reading2 = analogRead(A0) * 3.3 / 4096;
+        float reading2 = 3.3;
+        float reading3 = analogRead(A7) * 3.3 / 4096;
+        Serial.print(reading1);
+        Serial.print("     ");
+        Serial.print(reading2);
+        Serial.print("      ");
+        Serial.println(reading3);
         uint8_t button_state = digitalRead(BUTTON_PIN);
         uint8_t button_state2 = digitalRead(BUTTON_PIN2);
-        Serial.println(button_state);
-        Serial.println(button_state2);
-        if(button_state2==1)
-        {Serial.println(millis()-global_time);}
+        laser.update();
         laserbutton(button_state, button_state2);
-        // myDFPlayer.pause();
-        //get_request_status();
-        tft.setCursor(0,0,1);
-        
-        //tft.println(lives);
-        float reading = analogRead(A3) * 3.3 / 4096;
-        //Serial.println(reading);
+        LEDbullet(button_state2);
+//        LEDLife(lives);
+        tft.setCursor(0, 0, 1);
+        tft.println(lives);
         if (millis() - timer > 5000)
         {
           tft.fillScreen(TFT_BLACK);
           shot = false;
         }
-        if (reading < 1 and shot == false)
+        if (reading1 < 1  and shot == false)
         {
+          Serial.println("FUCKKKK1");
+          LEDLife(lives);
           lives--;
           shot = true;
-          int x =millis()-global_time;
-          post_for_getting_shot(millis()-global_time);
-          Serial.println(x);
-          
           timer = millis();
-          tft.fillScreen(TFT_RED);
+          post_for_getting_shot(0);
           
+          tft.fillScreen(TFT_RED);
+
           if (lives == 0) {
             tft.fillScreen(TFT_BLACK);
             state_for_game = DEAD;
           }
+        }
+          if (reading2 < 1  and shot == false)
+        {
+          Serial.println("FUCKKKK2");
+          LEDLife(lives);
+          lives--;
+          shot = true;
+          timer = millis();
+          post_for_getting_shot(0);
+          tft.fillScreen(TFT_RED);
           
+
+          if (lives == 0) {
+            tft.fillScreen(TFT_BLACK);
+            state_for_game = DEAD;
+          }
+
+        }
+        if (reading3 < 1  and shot == false)
+        {
+          Serial.println("FUCKKKK3");
+          LEDLife(lives);
+          lives--;
+          shot = true;
+          timer = millis();
+          post_for_getting_shot(0);
+          tft.fillScreen(TFT_RED);
+
+          if (lives == 0) {
+            tft.fillScreen(TFT_BLACK);
+            state_for_game = DEAD;
+          }
         }
         //shooting and sound effects
-//        if (flag_for_reload == 1)
-//        {
-//          bullets--;
-//          tft.fillScreen(TFT_BLUE);
-//          myDFPlayer.play(2);
-//        }
-//        else if (flag_for_reload == 2) {
-//          bullets = 10;
-//          tft.fillScreen(TFT_GREEN);
-//        }
+        //        if (flag_for_reload == 1)
+        //        {
+        //          bullets--;
+        //          tft.fillScreen(TFT_BLUE);
+        //          myDFPlayer.play(2);
+        //        }
+        //        else if (flag_for_reload == 2) {
+        //          bullets = 10;
+        //          tft.fillScreen(TFT_GREEN);
+        //        }
       }
       break;
 
     case DEAD:
+     myDFPlayer.play(7);
       get_("gameStatus");
-      if(flag == 2){
+      if (flag == 2) {
         setup();
-        
-        
       }
       break;
   }
@@ -398,11 +447,13 @@ void laserbutton(int buttonstate1, int buttonstate2) {
     case base:
       if (buttonstate2 == 1) {
         state = 1;
+         myDFPlayer.play(3);
         counter = millis();
       }
       if (ammo == 0) {
         ledcWrite(pwm_channel, 0);
         state = 3;
+         myDFPlayer.play(5);
         counter = millis();
       }
       break;
@@ -422,126 +473,126 @@ void laserbutton(int buttonstate1, int buttonstate2) {
         ammo = 20;
       }
       break;
-//    case third:
-//      if (millis() - counter > 3000) {
-//        ledcWrite(pwm_channel, 4095);
-//        ammo = 20;
-//        for (int j = 0; j < 20; j++) {
-//          strip.setPixelColor(j , strip.Color(255, 255, 255));
-//          state = 0;
-//        }
-//        strip.show();
-////      }
-//      break;
+    case third:
+      if (millis() - counter > 3000) {
+        ledcWrite(pwm_channel, 4095);
+        ammo = 20;
+        for (int j = 0; j < 20; j++) {
+          strip.setPixelColor(j , strip.Color(255, 255, 255));
+          state = 0;
+        }
+        strip.show();
+      }
+      break;
   }
 }
-//
 
 
-//void LEDbullet(int shot) {
-//  switch (statebullet) {
-//    case base:
-//      if (state == 2) {
-//        for (int j = 0; j < 20; j++) {
-//          strip.setPixelColor(j , strip.Color(255, 255, 255));
-//        }
-//        strip.show();
-//      }
-//      if (shot == 1) {
-//        if (ammo > 0) {
-//          for (int j = 0; j < 2; j++) {
-//            ammo = ammo - 1;
-//            strip.setPixelColor(ammo , strip.Color(0, 0, 0));
-//          }
-//          for (int j = ammo; j < 20; j++) {
-//            strip.setPixelColor(j , strip.Color(0, 0, 0));
-//          }
-//          strip.show();
-//          counterlaser = millis();
-//          statebullet = 1;
-//        }
-//      }
-//      break;
-//    case laserfirst:
-//      if (shot == 1) {
-//        if (millis() - counterlaser > 1000) {
-//          for (int j = 0; j < 20; j++) {
-//            strip.setPixelColor(j , strip.Color(255, 255, 255));
-//          }
-//          strip.show();
-//          statebullet = 0;
-//        }
-//      }
-//      else if (millis() - counterlaser > 200) {
-//        statebullet = 0;
-//      }
-//      break;
-//  }
-//}
-//
-//void LEDLife(int lives) {
-//  switch (statelife) {
-//    case baselife:
-//      if (life > 0) {
-//        if (life == 3) {
-//          striplife.setPixelColor(0 , strip.Color(255, 255, 0));
-//          striplife.setPixelColor(1 , strip.Color(255, 255, 0));
-//          striplife.setPixelColor(2 , strip.Color(0, 0, 0));
-//          life = life - 1;
-//        }
-//        else if (life == 2) {
-//          striplife.setPixelColor(0, strip.Color(255, 0, 0));
-//          striplife.setPixelColor(1, strip.Color(0, 0, 0));
-//          life = life - 1;
-//        }
-//        else if (life == 1) {
-//          striplife.setPixelColor(0, strip.Color(0, 0, 0));
-//          life = life - 1;
-//        }
-//        striplife.show();
-//      }
-//      counterlife = millis();
-//      statelife = 1;
-//      break;
-//    case firstlife:
-//      if (millis() - counterlife > 500) {
-//        statelife = 0;
-//      }
-//  }
-//}
+
+void LEDbullet(int shot) {
+  switch (statebullet) {
+    case base:
+      if (state == 2) {
+        for (int j = 0; j < 20; j++) {
+          strip.setPixelColor(j , strip.Color(255, 255, 255));
+        }
+        strip.show();
+      }
+      if (shot == 1) {
+        if (ammo > 0) {
+          for (int j = 0; j < 2; j++) {
+            ammo = ammo - 1;
+            strip.setPixelColor(ammo , strip.Color(0, 0, 0));
+          }
+          for (int j = ammo; j < 20; j++) {
+            strip.setPixelColor(j , strip.Color(0, 0, 0));
+          }
+          strip.show();
+          counterlaser = millis();
+          statebullet = 1;
+        }
+      }
+      break;
+    case laserfirst:
+      if (shot == 1) {
+        if (millis() - counterlaser > 1000) {
+          for (int j = 0; j < 20; j++) {
+            strip.setPixelColor(j , strip.Color(255, 255, 255));
+          }
+          strip.show();
+          statebullet = 0;
+        }
+      }
+      else if (millis() - counterlaser > 200) {
+        statebullet = 0;
+      }
+      break;
+  }
+}
+
+void LEDLife(int livee) {
+  switch (statelife) {
+    case baselife:
+      if (livee > 0) {
+        if (livee == 3) {
+          striplife.setPixelColor(0 , strip.Color(255, 255, 0));
+          striplife.setPixelColor(1 , strip.Color(255, 255, 0));
+          striplife.setPixelColor(2 , strip.Color(0, 0, 0));
+//          lives = lives - 1;
+        }
+        else if (livee == 2) {
+          striplife.setPixelColor(0, strip.Color(255, 0, 0));
+          striplife.setPixelColor(1, strip.Color(0, 0, 0));
+//          lives = lives - 1;
+        }
+        else if (livee == 1) {
+          striplife.setPixelColor(0, strip.Color(0, 0, 0));
+//          lives = lives - 1;
+        }
+        striplife.show();
+      }
+      counterlife = millis();
+      statelife = 1;
+      break;
+    case firstlife:
+      if (millis() - counterlife > 500) {
+        statelife = 0;
+      }
+  }
+}
 
 
 /*----------------------------------
- * char_append Function:
- * Arguments:
- *    char* buff: pointer to character array which we will append a
- *    char c: 
- *    uint16_t buff_size: size of buffer buff
- *    
- * Return value: 
- *    boolean: True if character appended, False if not appended (indicating buffer full)
- */
+   char_append Function:
+   Arguments:
+      char* buff: pointer to character array which we will append a
+      char c:
+      uint16_t buff_size: size of buffer buff
+
+   Return value:
+      boolean: True if character appended, False if not appended (indicating buffer full)
+*/
 uint8_t char_append(char* buff, char c, uint16_t buff_size) {
-        int len = strlen(buff);
-        if (len>buff_size) return false;
-        buff[len] = c;
-        buff[len+1] = '\0';
-        return true;
+  int len = strlen(buff);
+  if (len > buff_size) return false;
+  buff[len] = c;
+  buff[len + 1] = '\0';
+  return true;
 }
 
 /*----------------------------------
- * do_http_request Function:
- * Arguments:
- *    char* host: null-terminated char-array containing host to connect to
- *    char* request: null-terminated char-arry containing properly formatted HTTP request
- *    char* response: char-array used as output for function to contain response
- *    uint16_t response_size: size of response buffer (in bytes)
- *    uint16_t response_timeout: duration we'll wait (in ms) for a response from server
- *    uint8_t serial: used for printing debug information to terminal (true prints, false doesn't)
- * Return value:
- *    void (none)
- */
-void do_http_request(char* host, char* request, char* response, uint16_t response_size, uint16_t response_timeout, uint8_t serial){
+   do_http_request Function:
+   Arguments:
+      char* host: null-terminated char-array containing host to connect to
+      char* request: null-terminated char-arry containing properly formatted HTTP request
+      char* response: char-array used as output for function to contain response
+      uint16_t response_size: size of response buffer (in bytes)
+      uint16_t response_timeout: duration we'll wait (in ms) for a response from server
+      uint8_t serial: used for printing debug information to terminal (true prints, false doesn't)
+   Return value:
+      void (none)
+*/
+void do_http_request(char* host, char* request, char* response, uint16_t response_size, uint16_t response_timeout, uint8_t serial) {
   WiFiClient client; //instantiate a client object
   if (client.connect(host, 80)) { //try to connect to host on port 80
     if (serial) ;//Can do one-line if statements in C without curly braces
@@ -549,30 +600,30 @@ void do_http_request(char* host, char* request, char* response, uint16_t respons
     memset(response, 0, response_size); //Null out (0 is the value of the null terminator '\0') entire buffer
     uint32_t count = millis();
     while (client.connected()) { //while we remain connected read out data coming back
-      client.readBytesUntil('\n',response,response_size);
-//      if (serial) Serial.println(response);
-      if (strcmp(response,"\r")==0) { //found a blank line!
+      client.readBytesUntil('\n', response, response_size);
+      //      if (serial) Serial.println(response);
+      if (strcmp(response, "\r") == 0) { //found a blank line!
         break;
       }
       memset(response, 0, response_size);
-      if (millis()-count>response_timeout) break;
+      if (millis() - count > response_timeout) break;
     }
-    memset(response, 0, response_size);  
+    memset(response, 0, response_size);
     count = millis();
     while (client.available()) { //read out remaining text (body of response)
-      char_append(response,client.read(),OUT_BUFFER_SIZE);
+      char_append(response, client.read(), OUT_BUFFER_SIZE);
     }
-//    if (serial) Serial.println(response);
+    //    if (serial) Serial.println(response);
     client.stop();
-    if (serial) ; 
-  }else{
+    if (serial) ;
+  } else {
     if (serial) Serial.println("connection failed :/");
     if (serial) Serial.println("wait 0.5 sec...");
     client.stop();
   }
-}   
+}
 
-void printDetail(uint8_t type, int value){
+void printDetail(uint8_t type, int value) {
   switch (type) {
     case TimeOut:
       Serial.println(F("Time Out!"));
@@ -630,8 +681,8 @@ void printDetail(uint8_t type, int value){
 void music_player()
 {
   // static unsigned long timer = millis();
-  
- if (Serial.available()) {
+
+  if (Serial.available()) {
     String inData = "";
     //Serial.write("*");
     inData = Serial.readStringUntil('\n');
@@ -658,125 +709,63 @@ void music_player()
       Serial.println(F("start--------------------"));
       myDFPlayer.start();
     }
- }
-
- if (myDFPlayer.available()) {
-  if (myDFPlayer.readType()==DFPlayerPlayFinished) {
-    Serial.println(myDFPlayer.read());
-    Serial.println(F("next--------------------"));
-     myDFPlayer.next();  //Play next mp3 every 3 second.
-    Serial.println(F("readCurrentFileNumber--------------------"));
-    Serial.println(myDFPlayer.readCurrentFileNumber()); //read current play file number
-    delay(500);
   }
- }  
- // if (myDFPlayer.available()) {
- //   printDetail(myDFPlayer.readType(), myDFPlayer.read()); //Print the detail message from DFPlayer to handle different errors and states.
- // }
+
+  if (myDFPlayer.available()) {
+    if (myDFPlayer.readType() == DFPlayerPlayFinished) {
+      Serial.println(myDFPlayer.read());
+      Serial.println(F("next--------------------"));
+      myDFPlayer.next();  //Play next mp3 every 3 second.
+      Serial.println(F("readCurrentFileNumber--------------------"));
+      Serial.println(myDFPlayer.readCurrentFileNumber()); //read current play file number
+      delay(500);
+    }
+  }
+  // if (myDFPlayer.available()) {
+  //   printDetail(myDFPlayer.readType(), myDFPlayer.read()); //Print the detail message from DFPlayer to handle different errors and states.
+  // }
 }
 
 void get_(char* action)
 {
   char request[500];
-  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=%s HTTP/1.1\r\n",action);
-      sprintf(request+strlen(request),"Host: %s\r\n",host);
-      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-      Serial.println(response);
-      tft.setCursor(0,40,1);
-      tft.println(response);
-
-
+  sprintf(request, "GET /sandbox/sc/moisest/finalProject/request.py?user=%s&action=%s HTTP/1.1\r\n",username, action);
+  sprintf(request + strlen(request), "Host: %s\r\n", host);
+  strcat(request, "Content-Type: application/x-www-form-urlencoded\r\n");
+  sprintf(request + strlen(request), "Content-Length: %d\r\n\r\n", 0);
+  do_http_request(host, request, response, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT, true);
+  Serial.println(response);
+  tft.setCursor(0, 40, 1);
+  tft.println(response);
 }
 
-//void get_request_status()
-//{
-//  char request[500];
-//  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=gameStatus HTTP/1.1\r\n", "");
-//      sprintf(request+strlen(request),"Host: %s\r\n",host);
-//      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-//      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-//      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-//      Serial.println(response);
-//      tft.setCursor(0,40,1);
-//      tft.println(response);
-//  }
-//
-//  void get_request_waiting_string()
-//{
-//  char request[500];
-//  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=waitingString HTTP/1.1\r\n", "");
-//      sprintf(request+strlen(request),"Host: %s\r\n",host);
-//      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-//      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-//      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-//      Serial.println(response);
-//      //if (strlen(response)<25) {tft.fillScreen(TFT_BLACK);}
-//      tft.setCursor(0,0,1);
-//      tft.println(response);
-//      tft.fillScreen(TFT_PINK);
-//      //Serial.println(strlen(response));
-//  }
-//
-//void get_request_waiting()
-//{
-//  char request[500];
-//  tft.fillScreen(TFT_BLACK);
-//  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=waiting HTTP/1.1\r\n", "");
-//      sprintf(request+strlen(request),"Host: %s\r\n",host);
-//      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-//      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-//      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-//      Serial.println(response);
-//      tft.println(response);
-//  }
-
-//  void get_time()
-//{
-//  char request[500];
-//  tft.fillScreen(TFT_BLACK);
-//  sprintf(request,"GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=getTime HTTP/1.1\r\n", "");
-//      sprintf(request+strlen(request),"Host: %s\r\n",host);
-//      strcat(request,"Content-Type: application/x-www-form-urlencoded\r\n");
-//      sprintf(request+strlen(request),"Content-Length: %d\r\n\r\n",0);
-//      do_http_request(host,request,response,OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
-//      Serial.println(response);
-//      tft.println(response);
-//  }
-
 void post_for_starting_game()
-{     tft.fillScreen(TFT_BLACK);
-      char body[200]; //for body;
-//      Serial.println(username);
-      sprintf(body,"user=%s&action=initial",username);//generate body, posting to User, 1 step
-      //body_len = strlen(body); //calculate body length (for header reporting)
-      sprintf(request_buffer,"POST http://608dev.net/sandbox/sc/moisest/finalProject/request.py HTTP/1.1\r\n");
-      strcat(request_buffer,"Host: 608dev.net\r\n");
-      strcat(request_buffer,"Content-Type: application/x-www-form-urlencoded\r\n");
-      sprintf(request_buffer+strlen(request_buffer),"Content-Length: %d\r\n", strlen(body)); //append string formatted to end of request buffer
-      strcat(request_buffer,"\r\n"); //new line from header to body
-      strcat(request_buffer,body); //body
-      strcat(request_buffer,"\r\n"); //header
-      Serial.println(request_buffer);
-     
-      do_http_request("608dev.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);      
-     
-  }
+{ tft.fillScreen(TFT_BLACK);
+  char body[200]; //for body;
+  sprintf(body, "user=%s&action=initial", username); //generate body, posting to User, 1 step
+  sprintf(request_buffer, "POST http://608dev.net/sandbox/sc/moisest/finalProject/request.py HTTP/1.1\r\n");
+  strcat(request_buffer, "Host: 608dev.net\r\n");
+  strcat(request_buffer, "Content-Type: application/x-www-form-urlencoded\r\n");
+  sprintf(request_buffer + strlen(request_buffer), "Content-Length: %d\r\n", strlen(body)); //append string formatted to end of request buffer
+  strcat(request_buffer, "\r\n"); //new line from header to body
+  strcat(request_buffer, body); //body
+  strcat(request_buffer, "\r\n"); //header
+  Serial.println(request_buffer);
+  do_http_request("608dev.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT, true);
+}
 
-  void post_for_getting_shot(int time_of_shot)
-{ 
-      char body[200]; //for body;
-      sprintf(body,"user=Derek&action=shot&timeShot=%d",time_of_shot);//generate body, posting to User, 1 step
-      //body_len = strlen(body); //calculate body length (for header reporting)
-      sprintf(request_buffer,"POST http://608dev.net/sandbox/sc/moisest/finalProject/request.py HTTP/1.1\r\n");
-      strcat(request_buffer,"Host: 608dev.net\r\n");
-      strcat(request_buffer,"Content-Type: application/x-www-form-urlencoded\r\n");
-      sprintf(request_buffer+strlen(request_buffer),"Content-Length: %d\r\n", strlen(body)); //append string formatted to end of request buffer
-      strcat(request_buffer,"\r\n"); //new line from header to body
-      strcat(request_buffer,body); //body
-      strcat(request_buffer,"\r\n"); //header
-      Serial.println(request_buffer);
-      do_http_request("608dev.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);      
-     
-  }
+void post_for_getting_shot(int time_of_shot)
+{
+  char body[200]; //for body;
+  sprintf(body, "user=%s&action=shot&timeShot=%d",username, time_of_shot); //generate body, posting to User, 1 step
+  sprintf(request_buffer, "POST http://608dev.net/sandbox/sc/moisest/finalProject/request.py HTTP/1.1\r\n");
+  strcat(request_buffer, "Host: 608dev.net\r\n");
+  strcat(request_buffer, "Content-Type: application/x-www-form-urlencoded\r\n");
+  sprintf(request_buffer + strlen(request_buffer), "Content-Length: %d\r\n", strlen(body)); //append string formatted to end of request buffer
+  strcat(request_buffer, "\r\n"); //new line from header to body
+  strcat(request_buffer, body); //body
+  strcat(request_buffer, "\r\n"); //header
+  Serial.println(request_buffer);
+  do_http_request("608dev.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT, true);
+
+}

@@ -90,6 +90,7 @@ def request_handler(request):
             conn.close() # close connection to database
             disp = ""
 
+
             for user,lives,bullets,lat,lon,kills in things:
                 disp+= "User: {} \nLives {} \nBullets {} \nGPS ({},{}) \nKills {} \n==================\n".format(user,lives,bullets,lat,lon,kills)
             return disp
