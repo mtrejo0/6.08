@@ -163,7 +163,7 @@ const uint16_t IN_BUFFER_SIZE = 1000; //size of buffer to hold HTTP request
 char request_buffer[IN_BUFFER_SIZE]; //char array buffer to hold HTTP request
 char response_buffer[OUT_BUFFER_SIZE]; //char array buffer to hold HTTP response
 char host[] = "608dev.net";
-char username[] = "Moises";
+char username[] = "Max";
 //game variables
 int timer;
 bool shot;
@@ -182,10 +182,10 @@ Button button3(BUTTON_PIN3);
 HardwareSerial mySoftwareSerial(2);
 DFRobotDFPlayerMini myDFPlayer;
 
-//char network[] = "6s08";  //SSID for 6.08 Lab
-//char password[] = "iesc6s08"; //Password for 6.08 Lab
-char network[] = "MIT GUEST";
-char password[] = "";
+char network[] = "6s08";  //SSID for 6.08 Lab
+char password[] = "iesc6s08"; //Password for 6.08 Lab
+//char network[] = "MIT GUEST";
+//char password[] = "";
 char action[10];
 void printDetail(uint8_t type, int value);
 void setup() {
@@ -235,7 +235,7 @@ void setup() {
   Serial.println(F("DFPlayer Mini online."));
   myDFPlayer.setTimeOut(500); //Set serial communictaion time out 500ms
   //----Set volume----
-  myDFPlayer.volume(10);  //Set volume value (0~30).
+  myDFPlayer.volume(20);  //Set volume value (0~30).
   myDFPlayer.volumeUp(); //Volume Up
   myDFPlayer.volumeDown(); //Volume Down
   //----Set different EQ----
@@ -297,25 +297,22 @@ void loop() {
   uint8_t button_state = digitalRead(BUTTON_PIN);
   uint8_t button_state2 = digitalRead(BUTTON_PIN2);
   laser.update(); //callupdate as fast as possible on our software PWM object
-  //  laserbutton(button_state, button_state2);
-  //  LEDbullet(button_state2);
-  //  LEDLife(lives);
-  //  Serial.print("button1:");
-  //  Serial.print(button_state);
-  //  Serial.print("    ");
-  //  Serial.print("button2:");
-  //  Serial.print(button_state2);
-  //  Serial.print("    ");
-  //  Serial.print("state:");
-  //  Serial.print(state);
-  //  Serial.print("    ");
-  //  Serial.print("laserstate:");
-  //  Serial.print(statebullet);
-  //  Serial.print("    ");
-  //  Serial.print("gamestate: ");
+//  Serial.print("button1:");
+//  Serial.print(button_state);
+//  Serial.print("    ");
+//  Serial.print("button2:");
+//  Serial.print(button_state2);
+//  Serial.print("    ");
+//  Serial.print("state:");
+//  Serial.print(state);
+//  Serial.print("    ");
+//  Serial.print("laserstate:");
+//  Serial.print(statebullet);
+//  Serial.print("    ");
   Serial.print("gamestate: ");
   Serial.print(state_for_game);
-  Serial.print(" lives: ");
+  Serial.print("    ");
+  Serial.print("lives: ");
   Serial.println(lives);
 }
 
@@ -324,6 +321,30 @@ void state_machine() {
   switch (state_for_game)
   {
     case INITIALIZE:
+//     myDFPlayer.play(2);
+//     Serial.println("2");
+//     delay(1000);
+//     
+//     myDFPlayer.play(3);
+//     Serial.println("3");
+//     delay(1000);
+//     myDFPlayer.play(4);
+//     Serial.println("4");
+//     delay(1000);
+//     myDFPlayer.play(5);
+//     Serial.println("5");
+//     delay(1000);
+//     myDFPlayer.play(6);
+//     Serial.println("6");
+//     delay(1000);
+//     myDFPlayer.play(7);
+//     Serial.println("7");
+//     delay(1000);
+//     myDFPlayer.play(8);
+//     Serial.println("8");
+//     delay(1000);
+//     myDFPlayer.play(9);
+//     Serial.println("9");
       //    int x=now();
       if (flag == 2) {
         post_for_starting_game();
@@ -333,8 +354,6 @@ void state_machine() {
       }
       break;
     case WAITING:
-
-
       get_("waitingString");
       // make the time before a game display
       if (strcmp(response, "0 seconds remaining!") == 0)
@@ -343,14 +362,13 @@ void state_machine() {
         get_("waitingString");
         get_("getTime");
         global_time = millis();
+        myDFPlayer.pause();
         state_for_game = INGAME;
       }
       break;
     case INGAME: {
-       myDFPlayer.pause();
         float reading1 = analogRead(A3) * 3.3 / 4096;
-//        float reading2 = analogRead(A0) * 3.3 / 4096;
-        float reading2 = 3.3;
+        float reading2 = analogRead(A0) * 3.3 / 4096;
         float reading3 = analogRead(A7) * 3.3 / 4096;
         Serial.print(reading1);
         Serial.print("     ");
@@ -362,7 +380,7 @@ void state_machine() {
         laser.update();
         laserbutton(button_state, button_state2);
         LEDbullet(button_state2);
-//        LEDLife(lives);
+        //        LEDLife(lives);
         tft.setCursor(0, 0, 1);
         tft.println(lives);
         if (millis() - timer > 5000)
@@ -372,13 +390,11 @@ void state_machine() {
         }
         if (reading1 < 1  and shot == false)
         {
-          Serial.println("FUCKKKK1");
           LEDLife(lives);
-          lives--;
+          Serial.println("SENSOR1");
           shot = true;
           timer = millis();
           post_for_getting_shot(0);
-          
           tft.fillScreen(TFT_RED);
 
           if (lives == 0) {
@@ -386,16 +402,14 @@ void state_machine() {
             state_for_game = DEAD;
           }
         }
-          if (reading2 < 1  and shot == false)
+        if (reading2 < 1  and shot == false)
         {
-          Serial.println("FUCKKKK2");
           LEDLife(lives);
-          lives--;
+          Serial.println("SENSOR2");
           shot = true;
           timer = millis();
           post_for_getting_shot(0);
           tft.fillScreen(TFT_RED);
-          
 
           if (lives == 0) {
             tft.fillScreen(TFT_BLACK);
@@ -405,9 +419,8 @@ void state_machine() {
         }
         if (reading3 < 1  and shot == false)
         {
-          Serial.println("FUCKKKK3");
+          Serial.println("SENSOR3");
           LEDLife(lives);
-          lives--;
           shot = true;
           timer = millis();
           post_for_getting_shot(0);
@@ -433,7 +446,7 @@ void state_machine() {
       break;
 
     case DEAD:
-     myDFPlayer.play(7);
+      myDFPlayer.play(5);
       get_("gameStatus");
       if (flag == 2) {
         setup();
@@ -447,13 +460,13 @@ void laserbutton(int buttonstate1, int buttonstate2) {
     case base:
       if (buttonstate2 == 1) {
         state = 1;
-         myDFPlayer.play(3);
+ 
         counter = millis();
       }
       if (ammo == 0) {
         ledcWrite(pwm_channel, 0);
         state = 3;
-         myDFPlayer.play(5);
+        myDFPlayer.play(7);
         counter = millis();
       }
       break;
@@ -502,6 +515,9 @@ void LEDbullet(int shot) {
         if (ammo > 0) {
           for (int j = 0; j < 2; j++) {
             ammo = ammo - 1;
+            
+            post_shooting(ammo);
+            myDFPlayer.play(3);
             strip.setPixelColor(ammo , strip.Color(0, 0, 0));
           }
           for (int j = ammo; j < 20; j++) {
@@ -537,27 +553,28 @@ void LEDLife(int livee) {
         if (livee == 3) {
           striplife.setPixelColor(0 , strip.Color(255, 255, 0));
           striplife.setPixelColor(1 , strip.Color(255, 255, 0));
-          striplife.setPixelColor(2 , strip.Color(0, 0, 0));
-//          lives = lives - 1;
+          striplife.setPixelColor(2 , strip.Color(0,0,0));
+          lives = lives - 1;
+          Serial.println("base1");
         }
         else if (livee == 2) {
           striplife.setPixelColor(0, strip.Color(255, 0, 0));
           striplife.setPixelColor(1, strip.Color(0, 0, 0));
-//          lives = lives - 1;
+          striplife.setPixelColor(2, strip.Color(0, 0, 0));
+          lives = lives - 1;
+          Serial.println("base2");
         }
         else if (livee == 1) {
           striplife.setPixelColor(0, strip.Color(0, 0, 0));
-//          lives = lives - 1;
+          striplife.setPixelColor(1, strip.Color(0, 0, 0));
+          striplife.setPixelColor(2, strip.Color(0, 0, 0));
+          lives = lives - 1;
+          Serial.println("base3");
         }
         striplife.show();
       }
-      counterlife = millis();
-      statelife = 1;
+      Serial.print("IMADEIT");
       break;
-    case firstlife:
-      if (millis() - counterlife > 500) {
-        statelife = 0;
-      }
   }
 }
 
@@ -729,7 +746,7 @@ void music_player()
 void get_(char* action)
 {
   char request[500];
-  sprintf(request, "GET /sandbox/sc/moisest/finalProject/request.py?user=%s&action=%s HTTP/1.1\r\n",username, action);
+  sprintf(request, "GET /sandbox/sc/moisest/finalProject/request.py?user=Derek&action=%s HTTP/1.1\r\n", action);
   sprintf(request + strlen(request), "Host: %s\r\n", host);
   strcat(request, "Content-Type: application/x-www-form-urlencoded\r\n");
   sprintf(request + strlen(request), "Content-Length: %d\r\n\r\n", 0);
@@ -754,10 +771,25 @@ void post_for_starting_game()
   do_http_request("608dev.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT, true);
 }
 
-void post_for_getting_shot(int time_of_shot)
+void post_shooting(int ammo)
 {
   char body[200]; //for body;
-  sprintf(body, "user=%s&action=shot&timeShot=%d",username, time_of_shot); //generate body, posting to User, 1 step
+  sprintf(body, "user=%s&action=setBullets&timeShot=%d",username, ammo); //generate body, posting to User, 1 step
+  sprintf(request_buffer, "POST http://608dev.net/sandbox/sc/moisest/finalProject/request.py HTTP/1.1\r\n");
+  strcat(request_buffer, "Host: 608dev.net\r\n");
+  strcat(request_buffer, "Content-Type: application/x-www-form-urlencoded\r\n");
+  sprintf(request_buffer + strlen(request_buffer), "Content-Length: %d\r\n", strlen(body)); //append string formatted to end of request buffer
+  strcat(request_buffer, "\r\n"); //new line from header to body
+  strcat(request_buffer, body); //body
+  strcat(request_buffer, "\r\n"); //header
+  Serial.println(request_buffer);
+  do_http_request("608dev.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT, true);
+
+}
+void post_for_getting_shot(int times)
+{
+  char body[200]; //for body;
+  sprintf(body, "user=%s&action=shot&timeShot=%d",username, times); //generate body, posting to User, 1 step
   sprintf(request_buffer, "POST http://608dev.net/sandbox/sc/moisest/finalProject/request.py HTTP/1.1\r\n");
   strcat(request_buffer, "Host: 608dev.net\r\n");
   strcat(request_buffer, "Content-Type: application/x-www-form-urlencoded\r\n");
