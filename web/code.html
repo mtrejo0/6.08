@@ -27,6 +27,10 @@
   <p> request.py is the server-side code uploaded to 608dev.net. It contains all of the request handlers for GET and POST requests that the ESP32 and mobile app make.
   <h3>Mobile-App.zip</h3>
   <p>Contains all of the code for the mobile app, which includes a storyboard, xib files for custom tableview cells, and code for each view controller which make requests to the 608 server. Uses Alamofire.</p>
+  <br>
+  <img src="images/app-screenshot1.png"><p>getAllPlayersInGame sends the "getPlayers" request to the server and returns a dictionary of {username: [health, bullets, lat, lon]}. This data is stored locally and used to populate the UITable, and reloaded with the reloadWithoutScroll() function. getAllPlayersInGame() is called every 0.5 seconds.</p>
+  <img src="images/app-screenshot2.png"><p>This is the GPS code. locationManager 'didUpdateLocations' is called whenever the iPhone recieves new GPS data; every time this happens, the app launches a 'GPSUpdate' post request updating that particular player's GPS location; additionally the function invokes the updateLocationRequest method which
+    makes a GET request, getting the locations of all the players in the game. This information is displayed in the GoogleMapViewController as markers with annotated names, so that you can see where every player is.
   <h3>  clear.py </h3>
   <p> Clears all values in a database for debugging </p>
 </div>
