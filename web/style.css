@@ -42,3 +42,13 @@ body {
   display: table;
   margin: 0 auto;
 }
+
+#img-row {
+  margin: 0 auto;
+}
+
+.center {
+  width:100%;
+  display: flex;
+  justify-content: center;
+}
