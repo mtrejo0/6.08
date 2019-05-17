@@ -292,7 +292,6 @@ void setup() {
 
 
 void loop() {
-  //uint8_t button_state = digitalRead(6);
   state_machine();
   uint8_t button_state = digitalRead(BUTTON_PIN);
   uint8_t button_state2 = digitalRead(BUTTON_PIN2);
@@ -321,31 +320,6 @@ void state_machine() {
   switch (state_for_game)
   {
     case INITIALIZE:
-//     myDFPlayer.play(2);
-//     Serial.println("2");
-//     delay(1000);
-//     
-//     myDFPlayer.play(3);
-//     Serial.println("3");
-//     delay(1000);
-//     myDFPlayer.play(4);
-//     Serial.println("4");
-//     delay(1000);
-//     myDFPlayer.play(5);
-//     Serial.println("5");
-//     delay(1000);
-//     myDFPlayer.play(6);
-//     Serial.println("6");
-//     delay(1000);
-//     myDFPlayer.play(7);
-//     Serial.println("7");
-//     delay(1000);
-//     myDFPlayer.play(8);
-//     Serial.println("8");
-//     delay(1000);
-//     myDFPlayer.play(9);
-//     Serial.println("9");
-      //    int x=now();
       if (flag == 2) {
         post_for_starting_game();
         state_for_game = WAITING;
@@ -360,8 +334,6 @@ void state_machine() {
       {
         tft.fillScreen(TFT_BLACK);
         get_("waitingString");
-        get_("getTime");
-        global_time = millis();
         myDFPlayer.pause();
         state_for_game = INGAME;
       }
