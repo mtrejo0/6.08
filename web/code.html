@@ -3,7 +3,6 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css">
-  <title>Code</title>
 </head>
 <body>
 
@@ -44,10 +43,16 @@ strip to represent this number. In the base state, the function checks if functi
 accordingly whenever a player is shot. A POST request that updates the number of bullets on the server is made here.
 Initially, every player starts with 3 green LED’s turned on to signify full health. If a reading is made that says the player was shot,
  the function checks how many lives the player had and decreases the number of lives by 1. If a player with one life is shot, all LED’s turn off,
- signifying the player has lost. Once the player has lost, they will transition to the DEAD state.</p>
+ signifying the player has lost. Once the player has lost, they will transition to the DEAD state. Every three seconds and if the user is still alive, the ESP32 will do a GET request to see if it's username is the being returned by the request.
+If the ESP32 get the request of its own username, then it will go into the WIN state.
+</p>
 
  <p>
    In the DEAD state, the player will continue do a GET request that displays the status of the current game. The plaer can long press to initiate start up and allow for a new game to be started.
+ </p>
+
+ <p>
+   In the WIN state, the ESP32's LEDs will shine all green and allow for the player to go back to setup after a long press, to start a new game
  </p>
   <h3> request.py </h3>
   <p> request.py is the server-side code uploaded to 608dev.net. It contains all of the request handlers for GET and POST requests that the ESP32 and mobile app make.
