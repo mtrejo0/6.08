@@ -82,6 +82,12 @@ def request_handler(request):
                 temp = player[1:]
                 ret[player[0]] = temp
             return json.dumps(ret)
+        if(action == "getGPS"):
+            # action to get all the GPS data for all the players
+            gps =  c.execute('''SELECT lat,lon FROM playerData;''').fetchall()
+            conn.commit() # commit commands
+            conn.close() # close connection to database
+            return gps
 
         if(action == "display"):
             # action to help debug it displays all the players in the player data
@@ -95,12 +101,7 @@ def request_handler(request):
                 disp+= "User: {} \nLives {} \nBullets {} \nGPS ({},{}) \nKills {} \n==================\n".format(user,lives,bullets,lat,lon,kills)
             return disp
 
-        if(action == "getGPS"):
-            # action to get all the GPS data for all the players
-            gps =  c.execute('''SELECT lat,lon FROM playerData;''').fetchall()
-            conn.commit() # commit commands
-            conn.close() # close connection to database
-            return gps
+
         if(action == "getHealth"):
             # action to get all the GPS data for all the players
             things =  c.execute('''SELECT * FROM playerData;''').fetchall()

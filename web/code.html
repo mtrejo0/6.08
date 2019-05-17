@@ -20,11 +20,29 @@
 
 <div style="margin-left: 10%;">
   <h2 style="text-align: center;">Code</h2>
-  <p>All of your code, including this website can be found <a href="https://github.com/mtrejo0/6.08">Here</a>.</p>
+  <p>All of our code, including this website can be found <a href="https://github.com/mtrejo0/6.08">Here</a>.</p>
+
   <h3> Final.ino </h3>
   <p> This final contains all of the ESP32 code code including the state machines for the game logic, lights, and laser.</p>
   <h3> request.py </h3>
   <p> request.py is the server-side code uploaded to 608dev.net. It contains all of the request handlers for GET and POST requests that the ESP32 and mobile app make.
+    <img src="images/serverInit.jpg">
+    <p>This method inserts unique players and records when they posted they are ready yto check agaist other players to make sure there is at least 2 players to play a game.</p>
+    <img src="images/serverWait.png">
+    <p>This method takes in a cursor and checks to see if there is at least 2 players who have waited at least 5 seconds before the last person has posted that they are ready to start a game once this is confirmed all the players are transferred to the game database called playerData from the lobby database called lobbyPlayers.</p>
+    <img src="images/appCom.jpg">
+    <p>These methods allow a get request with a parameter called "action" to be used when requesting for specifi data. These methods are specifically used by only the mobile application so that it can use json dictionaries and easy to parse data.</p>
+    <img src="images/gameStatus.jpg">
+    <p>This method is called every second on the ESP to give the player information on the game wether they are alive or dead to see how the game is progressing with them in ther or not it tells the player how many people are left in the game including them if they are alive and not otherwise.</p>
+    <img src="images/setVals.jpg">
+    <p>These methods are used as POST requests with the special "action" parameter that tallows players to update the server with their information like Bullets or Health so that the mobile app has accurate data and so that the server can keep track of who is alive and dead</p>
+    <img src="images/shot.jpg">
+    <p>This POST method takes in a user and updates their values when they are shot. If they have taken their final shot then theya re removed from the database and cannot make any further updates and returns a line for ESP use to display.</p>
+    <img src="images/setGPS.jpg">
+    <p>This POST method takes in a usrname and GPS locations fromm the mobile app and updates the position of that player in the database and returns the json representation of this data to display on the mobile app.</p>
+    <img src="images/clear.jpg">
+    <p>This is a seperate file we used to debug and clear the servers when we are finished with a game used by the winner to allow a new game to be played.</p>
+
   <h3>Mobile-App.zip</h3>
   <p>Contains all of the code for the mobile app, which includes a storyboard, xib files for custom tableview cells, and code for each view controller which make requests to the 608 server. Uses Alamofire.</p>
   <br>
