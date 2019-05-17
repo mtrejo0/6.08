@@ -32,7 +32,7 @@ laser if there are no bullets left and reload the gun if the trigger is held for
   <p>Additionally, this function should control the number of bullets each player has and adjust and LED
 strip to represent this number. In the base state, the function checks if function laserbutton() is in state 2. If so, the function lights up every LED white. If the function gets a reading that the player shot a bullet, 2 LED’s from the strip will turn off to represent that the player just used a bullet and the function will move to its first state. In the first state, the function either waits .2 seconds to return to the base state, or waits 1 second and then turns on all the lights on the LED strip.</p>
  <img src="images/stateMachine1.png"><img src="images/stateMachine2.png"><img src="images/stateMachine3.png">
- <p>In the INITILIZE state the ESP32 waits for the user to long press, to post to the server that they are in the lobby. It will then transition to the WAITING state and give the user 3 lives.
+ <p>In the INITIALIZE state the ESP32 waits for the user to long press, to post to the server that they are in the lobby. It will then transition to the WAITING state and give the user 3 lives.
  </p>
  <p>
    In the WAITING state the ESP32 will do GET requests to the server awaiting for it to return "0 seconds remaining!" so that the ESP32 could go to the next state and for the game to start.
