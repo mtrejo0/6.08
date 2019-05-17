@@ -66,7 +66,6 @@ def request_handler(request):
             conn.close() # close connection to database
             return g[1]
 
-
         if (action == "getPlayers"):
             players =  c.execute('''SELECT user FROM playerData;''').fetchall()
             ret = []

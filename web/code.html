@@ -40,8 +40,6 @@
     <p>This POST method takes in a user and updates their values when they are shot. If they have taken their final shot then theya re removed from the database and cannot make any further updates and returns a line for ESP use to display.</p>
     <img src="images/setGPS.jpg">
     <p>This POST method takes in a usrname and GPS locations fromm the mobile app and updates the position of that player in the database and returns the json representation of this data to display on the mobile app.</p>
-    <img src="images/clear.jpg">
-    <p>This is a seperate file we used to debug and clear the servers when we are finished with a game used by the winner to allow a new game to be played.</p>
 
   <h3>Mobile-App.zip</h3>
   <p>Contains all of the code for the mobile app, which includes a storyboard, xib files for custom tableview cells, and code for each view controller which make requests to the 608 server. Uses Alamofire.</p>
@@ -50,6 +48,9 @@
   <img src="images/app-screenshot2.png"><p>This is the GPS code. locationManager 'didUpdateLocations' is called whenever the iPhone recieves new GPS data; every time this happens, the app launches a 'GPSUpdate' post request updating that particular player's GPS location; additionally the function invokes the updateLocationRequest method which
     makes a GET request, getting the locations of all the players in the game. This information is displayed in the GoogleMapViewController as markers with annotated names, so that you can see where every player is.
   <h3>  clear.py </h3>
+  <img src="images/clear.jpg">
+  <p>This is a seperate file we used to debug and clear the servers when we are finished with a game used by the winner to allow a new game to be played.</p>
+
   <p> Clears all values in a database for debugging </p>
 </div>
 
