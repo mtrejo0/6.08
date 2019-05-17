@@ -24,6 +24,14 @@
 
   <h3> Final.ino </h3>
   <p> This final contains all of the ESP32 code code including the state machines for the game logic, lights, and laser.</p>
+  <img src="images/laserButton.png">
+  <p>This is a state machine with 4 states. Overall, this function is supposed to turn off the
+laser if there are no bullets left and reload the gun if the trigger is held for 1 second. In the base case, the user has not pressed the laser gun’s trigger. If the button is pressed, the function moves to its first state and starts a timer. In the first state, if the button is released, the function returns to the base state. However, if one second has passed and the button is still being pressed, the laser’s PWM will be set to 0 (which turns off the laser) and the function will move to its second state. In the second state, the function will wait two more seconds before it turns on the laser again, returns to state 0, and resets the number of bullets to its maximum. If the player is in the base state and has 0 bullets, the function will start a timer, turn off the laser, and enter the third state. In the third state, the function will wait 3 seconds before it turns the laser back on, resets the bullets, and return to the base state.<p><br>
+  <p>Additionally, this function should control the number of bullets each player has and adjust and LED
+strip to represent this number. In the base state, the function checks if function laserbutton() is in state 2. If so, the function lights up every LED white. If the function gets a reading that the player shot a bullet, 2 LED’s from the strip will turn off to represent that the player just used a bullet and the function will move to its first state. In the first state, the function either waits .2 seconds to return to the base state, or waits 1 second and then turns on all the lights on the LED strip.</p>
+ <img src="images/stateMachine1.png"><img src="images/stateMachine2.png"><img src="images/stateMachine3.png">
+ <p>In the INGAME state, when any of the transistors are activated (reading1 < 1, reading2 < 1, reading3 < 1), the number of lives a player has adjusts and displays on the LCD
+accordingly whenever a player is shot. A POST request that updates the number of bullets on the server is made here. Initially, every player starts with 3 green LED’s turned on to signify full health. If a reading is made that says the player was shot, the function checks how many lives the player had and decreases the number of lives by 1. If a player with one life is shot, all LED’s turn off, signifying the player has lost.</p>
   <h3> request.py </h3>
   <p> request.py is the server-side code uploaded to 608dev.net. It contains all of the request handlers for GET and POST requests that the ESP32 and mobile app make.
     <img src="images/serverInit.jpg">
