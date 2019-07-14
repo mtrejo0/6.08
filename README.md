@@ -7,7 +7,7 @@ Lazer Tag is a game developed over the past few weeks that uses most of the tech
 ## App
 This project is accompanied with a mobile app. The mobile app features pairing to ESP32's, and provides GPS locations of all players on a map (Google Maps). The app also has a UI that shows every player's data: username, health, and bullets.
 
-<img src='web/images/app1.jpg' title='App' width='' alt='App' />
+<img src='web/images/app1.PNG' title='App' width='' alt='App' />
 
 
 
