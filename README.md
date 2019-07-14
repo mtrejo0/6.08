@@ -11,6 +11,10 @@ This project is accompanied with a mobile app. The mobile app features pairing t
 <img src='web/images/app2.PNG' title='App' width='' alt='App' />
 <img src='web/images/app3.PNG' title='App' width='' alt='App' />
 
+## Block Diagram
+
+<img src='web/images/BlockDiagram.jpg' title='' width=''/>
+
 
 
 
