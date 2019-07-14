@@ -15,6 +15,11 @@ This project is accompanied with a mobile app. The mobile app features pairing t
 
 <img src='web/images/BlockDiagram.jpg' title='' width=''/>
 
+## State Machines
+
+<img src='web/images/StateMachine.jpg' title='' width=''/>
+<img src='web/images/ServerStateMachine.jpg' title='' width=''/>
+
 
 
 
